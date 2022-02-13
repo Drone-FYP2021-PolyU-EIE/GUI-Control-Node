@@ -1,0 +1,5 @@
+<launch>
+
+    <node pkg="dron_control_node" type="control_node.py" name="control_node" output="screen"/>
+
+</launch>
