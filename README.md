@@ -24,5 +24,6 @@ catkin_make --cmake-args \
 ```bash
 sudo apt-get install python-tk
 sudo apt-get install python3-tk
+pip3 install netifaces
 git clone 
 ```
