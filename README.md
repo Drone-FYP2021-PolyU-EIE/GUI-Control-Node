@@ -26,5 +26,5 @@ sudo apt-get install python-tk
 sudo apt-get install python3-tk
 pip3 install netifaces
 cd <catkin_ws>
-git clone git@github.com:Drone-FYP2021-PolyU-EIE/dron_control_node.git
+git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 ```
