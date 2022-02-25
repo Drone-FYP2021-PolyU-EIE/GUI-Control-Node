@@ -2,6 +2,8 @@
 dron_control_node
 ## [riskly]Setup Workspace(catkin make)
 ```bash
+pip3 uninstall em
+pip3 install empy
 source devel/setup.bash
 wstool init
 wstool set -y src/geometry2 --git https://github.com/ros/geometry2 -v 0.6.5
