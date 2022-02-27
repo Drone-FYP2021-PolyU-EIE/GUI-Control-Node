@@ -34,8 +34,8 @@ python3
 ```
 READ this very carefully
 **for Python3** enusre the tf package's sys path is on top of the `'/opt/ros/melodic/lib/python2.7/dist-packages'`
-sys.papth.remove(python2_path)
-sys.papth.append(python2_path)
+sys.path.remove(python2_path)
+sys.path.append(python2_path)
 ### other opt [read](https://stackoverflow.com/questions/31414041/how-to-prepend-a-path-to-sys-path-in-python?answertab=votes)
 
 
