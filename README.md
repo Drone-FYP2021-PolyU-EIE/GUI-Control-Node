@@ -1,6 +1,6 @@
 # dron_control_node
 dron_control_node
-## [riskly]Setup Workspace(catkin make)
+## {riskly}Setup Workspace(catkin make)
 ```bash
 pip3 uninstall em
 pip3 install empy
@@ -22,6 +22,24 @@ catkin_make --cmake-args \
             -DPYTHON_INCLUDE_DIR=/usr/include/python3.6m \
             -DPYTHON_LIBRARY=/usr/lib/aarch64-linux-gnu/libpython3.6m.so
 ```
+after you build the package in the catkin ws, now the python and python3 system path are both fuck up       
+(Told you already this riskly)      
+to fix this we must go the py and py3 to fix sys path ourselves                     
+### opt1: do everytime after source deve
+```python
+#python3
+python3 
+>>> import sys
+>>> sys.path
+```
+READ this very carefully
+**for Python3** enusre the tf package's sys path is on top of the `'/opt/ros/melodic/lib/python2.7/dist-packages'`
+sys.papth.remove(python2_path)
+sys.papth.append(python2_path)
+### other opt [read](https://stackoverflow.com/questions/31414041/how-to-prepend-a-path-to-sys-path-in-python?answertab=votes)
+
+
+
 ## install
 ```bash
 sudo apt-get install python-tk
