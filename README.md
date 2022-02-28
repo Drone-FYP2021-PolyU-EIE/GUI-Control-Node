@@ -52,3 +52,4 @@ roslaunch dron_control_node lauchDroneControlNode.launch
 
 ![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
 
+![image](https://user-images.githubusercontent.com/45313904/156056672-ade1b6a5-aaa9-44fb-851d-aa2ca0b6d274.png)
