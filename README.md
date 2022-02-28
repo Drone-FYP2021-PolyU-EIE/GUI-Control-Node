@@ -23,7 +23,7 @@ catkin_make --cmake-args \
             -DPYTHON_LIBRARY=/usr/lib/aarch64-linux-gnu/libpython3.6m.so
 ```
 after you build the package in the catkin ws, now the python and python3 system path are both fuck up       
-(Told you already this riskly)      
+(Told you already this is riskly)      
 to fix this we must go the py and py3 to fix sys path ourselves                     
 ### opt1: do everytime after source deve
 ```python
@@ -47,4 +47,8 @@ sudo apt-get install python3-tk
 pip3 install netifaces
 cd <catkin_ws>
 git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
+roslaunch dron_control_node lauchDroneControlNode.launch 
 ```
+
+![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
+
