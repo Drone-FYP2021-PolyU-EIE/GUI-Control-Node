@@ -1,6 +1,17 @@
-#!/usr/bin/env python 3
+#!/usr/bin/env python3
+from ast import If
+import sys
+if sys.version_info < (3,0):
+    print("Sorry, requires Python 2.x, not Python 3.x")
+    sys.exit(1)
+sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
+sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
+sys.path.insert(1,'/opt/ros/melodic/lib/python2.7/dist-packages')
 
 import rospy
+import math
 import message_filters # To Achieve Multiple subscriber
 #from std_msgs.msg import Float32
 #from std_msgs.msg import Float64
@@ -14,7 +25,7 @@ import time
 from geometry_msgs.msg import PoseStamped, Quaternion, Point
 from mavros_msgs.srv import CommandBool, SetMode
 from mavros_msgs.msg import State
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+
 
 
 class drone_control_node(object):
@@ -29,16 +40,18 @@ class drone_control_node(object):
         rospy.init_node("state_machine_node", anonymous=True, disable_signals=True)
 
         # Rate
-        self.loop_rate = rospy.Rate(60)
+        self.loop_rate = rospy.Rate(40)
 
         # Node is subscribing to the topic
         # Subscribe to drone state
         #rospy.Subscriber('mavros/state', State, self.stateCb)
         #rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.posCb)
-        sub = message_filters.Subscriber("mavros/local_position/pose", PoseStamped)
-        sub.registerCallback(self.callback_local_position)
-        sub = message_filters.Subscriber("drone/target_postion/pose", PoseStamped)
-        sub.registerCallback(self.callback_target_position)
+        self.dron_position_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)
+        self.local_pos_sub = message_filters.Subscriber("/mavros/local_position/pose", PoseStamped)
+        self.local_pos_sub.registerCallback(self.callback_local_position)
+        self.target_pos_sub = message_filters.Subscriber("/drone/input_postion/pose", PoseStamped)
+        self.base_link="base_link"
+        self.target_pos_sub.registerCallback(self.callback_target_position)
 
         # Node is publishing to the topic
         #self.vesc1_pub = rospy.Publisher(vesc1_ns + '/commands/motor/speed', Float64, queue_size=10)
@@ -76,7 +89,8 @@ class drone_control_node(object):
         self.droneTargetQuatW =0.0
 
 
-        #target POS by Navgoation
+        #target POS by Navgoation(input)
+        self.droneNavtime =rospy.Time.now()
         self.droneNavPosX =0.0
         self.droneNavPosY =0.0
         self.droneNavPosZ =0.0
@@ -86,27 +100,50 @@ class drone_control_node(object):
         self.droneNavQuatZ =0.0
         self.droneNavQuatW =0.0
 
-        self.state = State()
+        self.root = tk.Tk()
+        #Navgoation post
+        self.droneNavPosXInfo = tk.StringVar(self.root, value="0.0")
+        self.droneNavPosYInfo = tk.StringVar(self.root, value="0.0")
+        self.droneNavPosZInfo = tk.StringVar(self.root, value="0.0")
+        self.droneNavRotXInfo = tk.StringVar(self.root, value="0.0")
+        self.droneNavRotYInfo = tk.StringVar(self.root, value="0.0")
+        self.droneNavRotZInfo = tk.StringVar(self.root, value="0.0")
+
+        #Local Pos
+        self.droneLocPosXInfo = tk.StringVar(self.root, value="0.0")
+        self.droneLocPosYInfo = tk.StringVar(self.root, value="0.0")
+        self.droneLocPosZInfo = tk.StringVar(self.root, value="0.0")
+        self.droneLocRotXInfo = tk.StringVar(self.root, value="0.0")
+        self.droneLocRotYInfo = tk.StringVar(self.root, value="0.0")
+        self.droneLocRotZInfo = tk.StringVar(self.root, value="0.0")
 
 
     #callback_local_position
     def callback_local_position(self, msg):
+        #rospy.loginfo("Drone Control Node: local pos call back")
         self.droneLocalPosX =msg.pose.position.x
-        self.dronePdroneLocalPosYosY =msg.pose.position.y
+        self.droneLocalPosY =msg.pose.position.y
         self.droneLocalPosZ =msg.pose.position.z
         orientation_quaternion = msg.pose.orientation
         orientation_quaternion_list = [orientation_quaternion.x, orientation_quaternion.y, orientation_quaternion.z, orientation_quaternion.w]
         #(roll, pitch, yaw)
         (self.droneLocalRotX, self.droneLocalRotY, self.droneLocalRotZ) = euler_from_quaternion (orientation_quaternion_list)
+        #rospy.loginfo("Drone Control Node: local pos X:%f,Y:%f,Z:%f",msg.pose.position.x,msg.pose.position.y,msg.pose.position.z)
+        #rospy.loginfo("Drone Control Node: local pos X:%f,Y:%f,Z:%f",self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ)
 
-    #callback_target_position
+    #callback_target_position(input)
     def callback_target_position(self, msg):
         #target POS by Navgoation
         self.droneNavPosX =msg.pose.position.x
-        self.droneNavPosY =msg.pose.position.x
-        self.droneNavPosZ =msg.pose.position.x
+        self.droneNavPosY =msg.pose.position.y
+        self.droneNavPosZ =msg.pose.position.z
+        self.droneNavtime =msg.header.stamp
         #-For rotate only yaw should be change
-        (self.droneNavQuatX ,self.droneNavQuatY, self.droneNavQuatZ, self.droneNavQuatW) = msg.pose.orientation
+        #rospy.loginfo(msg.pose.orientation)
+        self.droneNavQuatX = msg.pose.orientation.x
+        self.droneNavQuatY = msg.pose.orientation.y
+        self.droneNavQuatZ = msg.pose.orientation.z
+        self.droneNavQuatW = msg.pose.orientation.w
 
     #valid is number(float)
     def validateIsFloat(self, action, index, value_if_allowed, prior_value, text, validation_type, trigger_type, widget_name):
@@ -140,7 +177,7 @@ class drone_control_node(object):
     #PX4 Mode
     #-arm PX4
     def setPx4ArmMode(self):
-        rospy.loginfo("Drone Control Node: Setting PX4 Mode to Arm....")
+        rospy.loginfo("Drone Control Node: Trying PX4 Mode to Arm....")
         rospy.wait_for_service('mavros/cmd/arming')
         try:
             armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
@@ -148,11 +185,13 @@ class drone_control_node(object):
         except rospy.ServiceException as e:
             rospy.logwarn("[Drone Control Node] Aming service failed: %s"%e)
     def px4ArmMode(self):
-        armDaemon = threading.Thread(target = self.setPx4ArmMode,daemon = True)
+        rospy.loginfo("Drone Control Node: Starting PX4 Mode to Arm")
+        self.armDaemon = threading.Thread(target = self.setPx4ArmMode(),daemon = True)
+        self.armDaemon.start()
 
     #-px4 setmode
     def px4SetMode(self, setToMode):
-        rospy.loginfo("Drone Control Node: Setting PX4 Mode to %s",setToMode)
+        rospy.loginfo("Drone Control Node: Trying to set PX4 Mode to %s",setToMode)
         rospy.wait_for_service('mavros/set_mode')
         try:
             flightModeService = rospy.ServiceProxy('mavros/set_mode', SetMode)
@@ -164,14 +203,27 @@ class drone_control_node(object):
     def px4PosMode(self):
         #later do
         rospy.loginfo("Drone Control Node: Setting PX4 Mode to Position Mode....")
-        modeDaemon = threading.Thread(target = self.px4SetMode('POSITION'),daemon = True)
+        self.modeDaemon = threading.Thread(target = self.px4SetMode('POSITION'),daemon = True)
+        self.modeDaemon.start()
 
     #-px4 to OffBoard Mode
     def px4OffBoardMode(self):
         #later do
         rospy.loginfo("Drone Control Node: Setting PX4 Mode to Offboard Mode")
-        modeDaemon = threading.Thread(target = self.px4SetMode('OFFBOARD'),daemon = True)
+        self.modeDaemon = threading.Thread(target = self.px4SetMode('OFFBOARD'),daemon = True)
+        self.modeDaemon.start()
 
+    def setDronPosXYZ(self,X=0.0,Y=0.0,Z=0.0,Zr=0.0):
+
+        #target POS by GUI manual input
+        self.droneTargetPosX =X
+        self.droneTargetPosY =Y
+        self.droneTargetPosZ =Z
+        #-For rotate only yaw should be change
+        (self.droneTargetQuatX, self.droneTargetQuatY, self.droneTargetQuatZ, self.droneTargetQuatW) = quaternion_from_euler(0, 0, math.radians(Zr))
+
+    def setDronPos(self):
+        self.setDronPosXYZ(float(self.dronePosXInp.get()), float(self.dronePosYInp.get()), float(self.dronePosZInp.get()),float(self.droneRotZInp.get()))
 
     #Drone movement
     #-Horizontal Movement    
@@ -205,16 +257,17 @@ class drone_control_node(object):
     #GUI Body
     def gui(self):
         rospy.loginfo("Drone Control Node: Setting PX4 Mode up GUI now")
-        root = tk.Tk()
-        root.title("Control Node GUI")
+        #self.root.destroy()
+        #self.root = tk.Tk()
+        self.root.title("Control Node GUI")
 
         #title 
-        titlef = tk.Frame(root)
-        menubar = tk.Menu(root)
+        titlef = tk.Frame(self.root)
+        menubar = tk.Menu(self.root)
         menuList = tk.Menu(menubar, tearoff=0)
-        menuList.add_command(label="Exit", command=lambda:root.destroy())
+        menuList.add_command(label="Exit", command=lambda:self.root.destroy())
         menubar.add_cascade(label="Menu", menu=menuList)
-        root.config(menu=menubar)
+        self.root.config(menu=menubar)
 
         #title style
         title_font = tkfont.Font(family='Helvetica', size=24, weight="bold", slant="italic")
@@ -225,8 +278,8 @@ class drone_control_node(object):
         titlef.grid(row=0, column=0, columnspan=5,sticky="")
 
         #Select Control Mode
-        target = tk.LabelFrame(root, text="Target Control Mode",width=200)
-        target.grid(row=1, column=0, columnspan=5,sticky="W")
+        target = tk.LabelFrame(self.root, text="Target Control Mode",width=200)
+        target.grid(row=1, column=0, columnspan=3,sticky="W")
 
         autoModeBut = tk.Button(target, text="Auto", width=10,bd=2, cursor="exchange", command = lambda: self.autoMode())
         autoModeBut.grid(row=1, column=0, columnspan=1) 
@@ -238,20 +291,20 @@ class drone_control_node(object):
         manualModeBut.grid(row=1, column=2, columnspan=1)
         
         #Select Px4 Flight Mode
-        px4Mode = tk.LabelFrame(root, text="PX4 Flight Mode",width=200)
-        px4Mode.grid(row=2, column=0, columnspan=5,sticky="W")
+        px4Mode = tk.LabelFrame(self.root, text="PX4 Flight Mode",width=200)
+        px4Mode.grid(row=2, column=0, columnspan=3,sticky="W")
 
-        px4PosBut = tk.Button(px4Mode, text="Arm", width=10,bd=2, cursor="exchange", command = lambda: self.px4ArmMode())
-        px4PosBut.grid(row=1, column=0, columnspan=1) 
+        px4ArmBut = tk.Button(px4Mode, text="Arm", width=10,bd=2, cursor="exchange", command = lambda: self.px4ArmMode())
+        px4ArmBut.grid(row=1, column=0, columnspan=1) 
 
         px4PosBut = tk.Button(px4Mode, text="Position Mode", width=10,bd=2, cursor="exchange", command = lambda: self.px4PosMode())
         px4PosBut.grid(row=1, column=1, columnspan=1) 
 
         px4OffBoardBut = tk.Button(px4Mode, text="Offboard Mode", width=10,bd=2, cursor="exchange", command = lambda: self.px4OffBoardMode())
-        px4OffBoardBut.grid(row=1, column=2, columnspan=2) 
+        px4OffBoardBut.grid(row=1, column=2, columnspan=1) 
 
         #Drone Movement
-        droneMovement = tk.LabelFrame(root, text="Drone Movement",width=200)
+        droneMovement = tk.LabelFrame(self.root, text="Drone Movement",width=200)
         droneMovement.grid(row=3, column=0, columnspan=10,sticky="W")
         
         #Horizontal Movement
@@ -280,8 +333,11 @@ class drone_control_node(object):
         droneUpBut = tk.Button(droneVerticalMovement, text="Up", width=10,bd=2, cursor="exchange", command = lambda: self.droneUp())
         droneUpBut.grid(row=0, column=0, columnspan=1) 
 
+        droneStop2But = tk.Button(droneVerticalMovement, text="Hold", width=10,bd=2, cursor="exchange", command = lambda: self.droneStop())
+        droneStop2But.grid(row=1, column=0, columnspan=1)
+
         droneDownBut = tk.Button(droneVerticalMovement, text="Down", width=10,bd=2, cursor="exchange", command = lambda: self.droneDown())
-        droneDownBut.grid(row=1, column=0, columnspan=1) 
+        droneDownBut.grid(row=2, column=0, columnspan=1) 
 
         #Rotational Movement
         droneRotationalMovement = tk.LabelFrame(droneMovement, text="Rotational Movement",width=200)
@@ -294,15 +350,15 @@ class drone_control_node(object):
         droneRotateRightBut.grid(row=0, column=1, columnspan=1)
 
         #Drone Movement by Pos
-        dronePosMovement = tk.LabelFrame(root, text="Drone Movement(By Position)",width=200)
-        dronePosMovement.grid(row=6, column=0, columnspan=10,sticky="W")
+        dronePosMovement = tk.LabelFrame(self.root, text="Drone Movement(By Position)",width=200)
+        dronePosMovement.grid(row=6, column=0, columnspan=10,rowspan=2,sticky="W")
         
         #position X
         dronePosXLab = tk.Label(dronePosMovement, text="X:")
         dronePosXLab.grid(row=0, column=0, columnspan=1,sticky="W")
 
-        vcmdPosX = (root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        self.dronePosXInp = tk.StringVar(root, value="0.0") 
+        vcmdPosX = (self.root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        self.dronePosXInp = tk.StringVar(self.root, value="0.0") 
         dronePosXEnt = tk.Entry(dronePosMovement, validate = 'key', validatecommand = vcmdPosX, textvariable = self.dronePosXInp)
         #dronePosXEnt = tk.Entry(dronePosMovement, textvariable = self.dronePosX)
         dronePosXEnt.grid(row=0,column=1)
@@ -311,8 +367,8 @@ class drone_control_node(object):
         dronePosYLab = tk.Label(dronePosMovement, text="Y:")
         dronePosYLab.grid(row=0, column=3, columnspan=1,sticky="W")
 
-        vcmdPosY = (root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        self.dronePosYInp = tk.StringVar(root, value="0.0")
+        vcmdPosY = (self.root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        self.dronePosYInp = tk.StringVar(self.root, value="0.0")
         dronePosYEnt = tk.Entry(dronePosMovement, validate = 'key', validatecommand = vcmdPosY, textvariable = self.dronePosYInp)
         #dronePosYEnt = tk.Entry(dronePosMovement, textvariable = self.dronePosY)
         dronePosYEnt.grid(row=0,column=4)
@@ -322,8 +378,8 @@ class drone_control_node(object):
         dronePosZLab = tk.Label(dronePosMovement, text="Z:")
         dronePosZLab.grid(row=0, column=5, columnspan=1,sticky="W")
 
-        vcmdPosZ = (root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        self.dronePosZInp = tk.StringVar(root, value="0.0")
+        vcmdPosZ = (self.root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        self.dronePosZInp = tk.StringVar(self.root, value="0.0")
         dronePosZEnt = tk.Entry(dronePosMovement, validate = 'key', validatecommand = vcmdPosZ, textvariable = self.dronePosZInp)
         dronePosZEnt.grid(row=0,column=6)
         
@@ -331,42 +387,120 @@ class drone_control_node(object):
         droneRotZLab = tk.Label(dronePosMovement, text="Rotation Z:")
         droneRotZLab.grid(row=0, column=7, columnspan=1,sticky="W")
 
-        vcmdRotZ = (root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        self.droneRotZInp = tk.StringVar(root, value="0.0")
+        vcmdRotZ = (self.root.register(self.validateIsFloat),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        self.droneRotZInp = tk.StringVar(self.root, value="0.0")
         droneRotZEnt = tk.Entry(dronePosMovement, validate = 'key', validatecommand = vcmdRotZ, textvariable = self.droneRotZInp)
         droneRotZEnt.grid(row=0,column=8)
 
-        self.droneNavPosXInfo = tk.StringVar(root, value="0.0")
-        self.droneNavPosYInfo = tk.StringVar(root, value="0.0")
-        self.droneNavPosZInfo = tk.StringVar(root, value="0.0")
-        self.droneNavRotXInfo = tk.StringVar(root, value="0.0")
-        self.droneNavRotYInfo = tk.StringVar(root, value="0.0")
-        self.droneNavRotZInfo = tk.StringVar(root, value="0.0")
+        #Set pos
+        autoModeBut = tk.Button(dronePosMovement, text="Set", width=10,bd=2, cursor="exchange", command = lambda: self.setDronPos())
+        autoModeBut.grid(row=1, column=0, columnspan=1) 
+        #reset manual pos
+        autoModeBut = tk.Button(dronePosMovement, text="Reset", width=10,bd=2, cursor="exchange", command = lambda: self.resetmanual())
+        autoModeBut.grid(row=1, column=1, columnspan=1) 
+        #stop manual pos
+        autoModeBut = tk.Button(dronePosMovement, text="Stop", width=10,bd=2, cursor="exchange", command = lambda: self.stopmanual())
+        autoModeBut.grid(row=1, column=1, columnspan=1) 
 
+
+
+        #Display Local Pos
+        droneLocPos = tk.LabelFrame(self.root, text="Current Position:",width=200)
+        droneLocPos.grid(row=1, column=3, columnspan=3,rowspan=2,sticky="NE")
+
+        droneLocPosXLab = tk.Label(droneLocPos, width=10, textvariable=self.droneLocPosXInfo)
+        droneLocPosXLab.grid(row=0, column=0, columnspan=1,sticky="NE")
+        droneLocPosYLab = tk.Label(droneLocPos, width=10, textvariable=self.droneLocPosYInfo)
+        droneLocPosYLab.grid(row=0, column=1, columnspan=1,sticky="NE")
+        droneLocPosZLab = tk.Label(droneLocPos, width=10, textvariable=self.droneLocPosZInfo)
+        droneLocPosZLab.grid(row=0, column=2, columnspan=1,sticky="NE")
+        droneLocRotXLab = tk.Label(droneLocPos, textvariable=self.droneLocRotXInfo)
+        droneLocRotXLab.grid(row=1, column=0, columnspan=1,sticky="NE")
+        droneLocRotYLab = tk.Label(droneLocPos, textvariable=self.droneLocRotYInfo)
+        droneLocRotYLab.grid(row=1, column=1, columnspan=1,sticky="NE")
+        droneLocRotZLab = tk.Label(droneLocPos, textvariable=self.droneLocRotZInfo)
+        droneLocRotZLab.grid(row=1, column=2, columnspan=1,sticky="NE")
+        
         rospy.loginfo("Drone Control Node: Setting GUI Finish")
-        root.mainloop()
+
+        #update GUI info
+        self.GUIinfoUpdate()
+        self.control_node_body()
+        self.root.mainloop()
 
     def GUIinfoUpdate(self):
-        self.droneNavPosXInfo.set()
-
+            #self.droneNavPosXInfo.set('X:'+self.droneLocalPosX)
+            #self.droneNavPosYInfo.set('Y:'+self.droneLocalPosY)
+            #self.droneNavPosZInfo.set('Z:'+self.droneLocalPosZ)
+            #self.droneNavRotXInfo.set('X(deg):'+self.droneLocalRotX)
+            #self.droneNavRotYInfo.set('Y(deg):'+self.droneLocalRotY)
+            #self.droneNavRotZInfo.set('Z(deg):'+self.droneLocalRotZ)
+            #rospy.loginfo("Drone Control Node: local pos X:%f,Y:%f,Z:%f",self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ)
+            self.droneLocPosXInfo.set('X(m):%.2f' % (self.droneLocalPosX))
+            self.droneLocPosYInfo.set('Y(m):%.2f' % (self.droneLocalPosY))
+            self.droneLocPosZInfo.set('Z(m):%.2f' % (self.droneLocalPosZ))
+            self.droneLocRotXInfo.set('X(deg):%.2f'% (math.degrees(self.droneLocalRotX)))
+            self.droneLocRotYInfo.set('Y(deg):%.2f'% (math.degrees(self.droneLocalRotY)))
+            self.droneLocRotZInfo.set('Z(deg):%.2f'% (math.degrees(self.droneLocalRotZ)))
+            #rospy.loginfo("Drone Control Node: local pos X:%f,Y:%f,Z:%f",self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ)
+            #if not rospy.is_shutdown():
+                #self.GUIInfo.start()
+            self.root.after(500,self.GUIinfoUpdate)
+            
 
     def start(self):
         #ROS Body
-        while not rospy.is_shutdown():
-            # rospy.spin() simply keeps python from exiting until this node is stopped
+        #while not rospy.is_shutdown():
+        # rospy.spin() simply keeps python from exiting until this node is stopped
+        rospy.loginfo("Drone Control Node: ROS System Up")
+        self.gui()
+        self.root.destroy()
 
-            rospy.loginfo("Drone Control Node: System Up")
-            rospy.spin()
+    def control_node_body(self):
+        finalPoseStamped = PoseStamped()
+        if self.mode == "manual":
+            #rospy.loginfo("Drone Control Node: Ma")
+            finalPoseStamped.header.stamp = rospy.Time.now()
+            finalPoseStamped.header.frame_id = self.base_link
+            finalPoseStamped.pose.position.x = self.droneTargetPosX
+            finalPoseStamped.pose.position.y = self.droneTargetPosY
+            finalPoseStamped.pose.position.z = self.droneTargetPosZ
+            finalPoseStamped.pose.orientation.x = self.droneTargetQuatX
+            finalPoseStamped.pose.orientation.y = self.droneTargetQuatY
+            finalPoseStamped.pose.orientation.z = self.droneTargetQuatZ
+            finalPoseStamped.pose.orientation.w = self.droneTargetQuatW
+            self.dron_position_pub.publish(finalPoseStamped)
+            #rospy.loginfo(finalPoseStamped)
+        elif self.mode == "auto":
+            rospy.loginfo("Drone Control Node: auto")
+            finalPoseStamped.header.stamp = self.droneNavtime
+            finalPoseStamped.header.frame_id = self.base_link
+            finalPoseStamped.pose.position.x = self.droneNavPosX
+            finalPoseStamped.pose.position.y = self.droneNavPosY
+            finalPoseStamped.pose.position.z = self.droneNavPosZ
+            finalPoseStamped.pose.orientation.x = self.droneNavQuatX
+            finalPoseStamped.pose.orientation.y = self.droneNavQuatY
+            finalPoseStamped.pose.orientation.z = self.droneNavQuatZ
+            finalPoseStamped.pose.orientation.w = self.droneNavQuatW
+            self.dron_position_pub.publish(finalPoseStamped)
+        else:
+            self.mode = "manual"
+        self.root.after(2,self.control_node_body)
 
+
+        
 
 if __name__ == '__main__':
     my_node = drone_control_node()
-    #start GUI
-    GUIbody = threading.Thread(target = my_node.gui,daemon = True)
-    GUIbody.start()
-    #my_node.gui()
+    #my_node.GUIinfoUpdateTh()
+    #Start GUI part
+    #GUIbody = threading.Thread(target = my_node.gui(),daemon = True)
+    #Thread to update info from ROS to GUI
+    #GUIbody.start()
 
-    #Start ROS part
+    #ControlBody = threading.Thread(target = my_node.control_node_body(),daemon = True)
+    #ControlBody.start()
+    ##start ROS
     my_node.start()
 
 

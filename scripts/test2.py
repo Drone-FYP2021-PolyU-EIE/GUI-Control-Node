@@ -1,51 +1,39 @@
-import tkinter as tk
+#!/usr/bin/python3
 
-class widget:
-    def __init__(self,master):
-        # vcmd = (master.register(self.validate),
-                # '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        self.master = master
-        self.entryNumbers = tk.Entry(master,justify = tk.CENTER)
-        self.entryNumbers.insert(0, "5")
-        self.entryNumbers.grid(row = 0,column = 0,columnspan =2,sticky="EW")
-        self.createEntriesButton = tk.Button(master,text = "Create Entries",command = self.createEntries)
-        self.createEntriesButton.grid(row = 1, column = 0,columnspan = 2,sticky="EW")
+import threading
+import time
 
-    def createEntries(self):
-        self.entryNumbers.grid_forget()
-        self.createEntriesButton.grid_forget()
+exitFlag = 0
 
-        self.entries = []
-        self.entryLabels = []
+class myThread (threading.Thread):
+   def __init__(self, threadID, name, counter):
+      threading.Thread.__init__(self)
+      self.threadID = threadID
+      self.name = name
+      self.counter = counter
+   def run(self):
+      print ("Starting " + self.name)
+      print_time(self.name, self.counter, 5)
+      print ("Exiting " + self.name)
 
-        vcmd = self.master.register(self.validateEntry)
+def print_time(threadName, delay, counter):
+   while counter:
+      if exitFlag:
+         threadName.exit()
+      time.sleep(delay)
+      print ("%s: %s" % (threadName, time.ctime(time.time())))
+      counter -= 1
 
-        for i in range(int(self.entryNumbers.get())):
-            self.entryLabels.append(tk.Label(self.master,text = "Row {}".format(i)))
-            self.entryLabels[-1].grid(row = i,column = 0)
-            self.entries.append(tk.Entry(self.master, validatecommand=(vcmd,'%P',i)))
-            self.entries[-1].grid(row = i,column = 1)
+# Create new threads
+thread1 = myThread(1, "Thread-1", 1)
+thread2 = myThread(2, "Thread-2", 2)
+thread3 = myThread(3, "Thread-3", 3)
 
-        self.addEntriesButton = tk.Button(self.master,text = "Add Entries",command = self.addEntry)
-        self.addEntriesButton.grid(row = i+1, column = 0,columnspan = 2,sticky="EW")
-
-    def addEntry(self): 
-        count = len(self.entries)
-
-        vcmd = self.master.register(self.validateEntry)
-
-        self.entryLabels.append(tk.Label(self.master,text = "Row {}".format(count)))
-        self.entryLabels[-1].grid(row = count+1,column = 0)
-        self.entries.append(tk.Entry(self.master, validatecommand=(vcmd,'%P',count)))
-        self.entries[-1].grid(row = count+1,column = 1)
-        self.addEntriesButton.grid(row = count+2, column = 0,columnspan = 2,sticky="EW")
-
-    def validateEntry(self,P,row):
-        if P != row:
-            return True
-        else:
-            return False
-
-root1=tk.Tk()
-widget(root1)
-root1.mainloop()
+# Start new Threads
+thread1.start()
+thread2.start()
+thread3.start()
+thread1.join()
+thread2.join()
+thread3.join()
+print ("Exiting Main Thread")
