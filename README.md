@@ -1,7 +1,16 @@
 # dron_control_node
 dron_control_node
 ## Node ROS Topics
-
+### Input of the Node
+`/mavros/local_position/pose`, `PoseStamped` get the currnte postion of the drone               
+`/drone/input_postion/pose`, `PoseStamped` get the pos from the vision nagvation system         
+`/drone/ground_control/pose`, `PoseStamped` (porposted) get the pos from the Ground Control manual input(for Ground Control use)                  
+`/drone/set/control_mode`, `String` (porposted) set the control mode(for Ground Control use)                  
+`/drone/set/px4_mode`, `String` (porposted) set the control mode(for Ground Control use)                      
+### Output of the Node  
+`/mavros/setpoint_position/local`, `PoseStamped` (>30Hz) pos pass to the mavros to excite               
+`/drone/current/control_mode`, `String` (porposted) send the current control mode out                        
+`/drone/nagvation/pos`, `PoseStamped` (porposted)(>20Hz) pos pass to the vision nagvation to excite                 
 ## {riskly}Setup Workspace(catkin make)
 ```bash
 pip3 uninstall em
