@@ -62,6 +62,11 @@ git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 roslaunch dron_control_node lauchDroneControlNode.launch 
 ```
 
+## Procedure of using control node gui
+1. Click arm button to arm the drone
+2. Enter the desired position and angle
+3. Click Offboard button to change the mode
+
 ## Update Blog
 2022-3-7-01:21 Upload the new version of `control_node.py` aim to let the navgation program know whether start the program or stop it
 
