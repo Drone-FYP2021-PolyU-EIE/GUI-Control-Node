@@ -27,7 +27,6 @@ from mavros_msgs.srv import CommandBool, SetMode
 from mavros_msgs.msg import State
 
 
-
 class drone_control_node(object):
     
     def __init__(self):
@@ -47,6 +46,7 @@ class drone_control_node(object):
         #rospy.Subscriber('mavros/state', State, self.stateCb)
         #rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.posCb)
         self.dron_position_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)
+        self.automode_pub = rospy.Publisher("/auto_mode/status", Bool, queue_size=1)
         self.local_pos_sub = message_filters.Subscriber("/mavros/local_position/pose", PoseStamped)
         self.local_pos_sub.registerCallback(self.callback_local_position)
         self.target_pos_sub = message_filters.Subscriber("/drone/input_postion/pose", PoseStamped)
@@ -470,6 +470,9 @@ class drone_control_node(object):
             finalPoseStamped.pose.orientation.z = self.droneTargetQuatZ
             finalPoseStamped.pose.orientation.w = self.droneTargetQuatW
             self.dron_position_pub.publish(finalPoseStamped)
+            status = bool()
+            status=False
+            self.automode_pub.publish(status)
             #rospy.loginfo(finalPoseStamped)
         elif self.mode == "auto":
             rospy.loginfo("Drone Control Node: auto")
@@ -483,6 +486,9 @@ class drone_control_node(object):
             finalPoseStamped.pose.orientation.z = self.droneNavQuatZ
             finalPoseStamped.pose.orientation.w = self.droneNavQuatW
             self.dron_position_pub.publish(finalPoseStamped)
+            status = bool()
+            status=True
+            self.automode_pub.publish(status)
         else:
             self.mode = "manual"
         self.root.after(2,self.control_node_body)
