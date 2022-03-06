@@ -8,7 +8,8 @@ dron_control_node
 `/drone/set/control_mode`, `String` (porposted) set the control mode(for Ground Control use)                  
 `/drone/set/px4_mode`, `String` (porposted) set the control mode(for Ground Control use)                      
 ### Output of the Node  
-`/mavros/setpoint_position/local`, `PoseStamped` (>30Hz) pos pass to the mavros to excite               
+`/mavros/setpoint_position/local`, `PoseStamped` (>30Hz) pos pass to the mavros to excite       
+`"/auto_mode/status"`, `Bool` let the navgation program know whether start the program or stop it
 `/drone/current/control_mode`, `String` (porposted) send the current control mode out                        
 `/drone/nagvation/pos`, `PoseStamped` (porposted)(>20Hz) pos pass to the vision nagvation to excite                 
 ## {riskly}Setup Workspace(catkin make)
@@ -59,6 +60,11 @@ pip3 install netifaces
 cd <catkin_ws>
 git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 roslaunch dron_control_node lauchDroneControlNode.launch 
+```
+
+## Update log
+```
+2022-3-7-01:21 Upload the new version of `control_node.py` aim to let the navgation program know whether start the program or stop it
 ```
 
 ![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
