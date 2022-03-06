@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 from ast import If
 import sys
+# check pythone version
 if sys.version_info < (3,0):
-    print("Sorry, requires Python 2.x, not Python 3.x")
+    print("Sorry, requires Python 3.x, not Python 2.x")
     sys.exit(1)
-sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
-sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
-sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
-sys.path.insert(1,'/opt/ros/melodic/lib/python2.7/dist-packages')
+
+# TF fix Verion 2
+try:
+    from tf.transformations import euler_from_quaternion, quaternion_from_euler
+except:
+    sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
+    sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
+    from tf.transformations import euler_from_quaternion, quaternion_from_euler
+    sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
+    sys.path.insert(1,'/opt/ros/melodic/lib/python2.7/dist-packages')
 
 import rospy
 import math
@@ -32,33 +38,36 @@ class drone_control_node(object):
     def __init__(self):
 
         # ROS loop rate
-
-        # Tells rospy the name of the node.
-        # Anonymous = True makes sure the node has a unique name. Random
-        # numbers are added to the end of the name.
-        rospy.init_node("state_machine_node", anonymous=True, disable_signals=True)
-
         # Rate
         self.loop_rate = rospy.Rate(40)
-
+        
+        # Node is publishing to the topic
+        # e.g. self.vesc1_pub = rospy.Publisher(vesc1_ns + '/commands/motor/speed', Float64, queue_size=10)
+        self.dron_position_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)
+        self.dron_control_mode_pub = rospy.Publisher("/drone/current/control_mode", String, queue_size=1)
+        self.dron_nagvation_pose_pub = rospy.Publisher("/drone/nagvation/pos", String, queue_size=1)
+        # un doc change
+        self.automode_pub = rospy.Publisher("/auto_mode/status", Bool, queue_size=1)
+        
         # Node is subscribing to the topic
         # Subscribe to drone state
-        #rospy.Subscriber('mavros/state', State, self.stateCb)
-        #rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.posCb)
-        self.dron_position_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)
-        self.automode_pub = rospy.Publisher("/auto_mode/status", Bool, queue_size=1)
         self.local_pos_sub = message_filters.Subscriber("/mavros/local_position/pose", PoseStamped)
         self.local_pos_sub.registerCallback(self.callback_local_position)
         self.target_pos_sub = message_filters.Subscriber("/drone/input_postion/pose", PoseStamped)
-        self.base_link="base_link"
         self.target_pos_sub.registerCallback(self.callback_target_position)
+        self.base_link="base_link"
+        
+        # Tells rospy the name of the node.
+        # Anonymous = True makes sure the node has a unique name. Random
+        # numbers are added to the end of the name.
+        rospy.init_node("drone_control", anonymous=True, disable_signals=True)
 
-        # Node is publishing to the topic
-        #self.vesc1_pub = rospy.Publisher(vesc1_ns + '/commands/motor/speed', Float64, queue_size=10)
 
         #setup variable
         self.mode="manual"
-
+        
+        # Manual Mode false safe
+        self.dronePosSafe = false
         #target POS by GUI manual input
         self.dronePosX =0.0
         self.dronePosY =0.0
@@ -77,8 +86,9 @@ class drone_control_node(object):
         self.droneLocalRotY =0.0
         self.droneLocalRotZ =0.0
 
-
-        #target POS by GUI manual input
+        # Auto mode false safe
+        self.droneTargetPosSafe = false
+        # target POS by GUI manual input
         self.droneTargetPosX =0.0
         self.droneTargetPosY =0.0
         self.droneTargetPosZ =0.0
@@ -454,12 +464,14 @@ class drone_control_node(object):
         # rospy.spin() simply keeps python from exiting until this node is stopped
         rospy.loginfo("Drone Control Node: ROS System Up")
         self.gui()
+        #incase tk exit the mainloop somehow
         self.root.destroy()
 
     def control_node_body(self):
         finalPoseStamped = PoseStamped()
         if self.mode == "manual":
-            #rospy.loginfo("Drone Control Node: Ma")
+            #rospy.loginfo("Drone Control Node: Manual Mode Running")
+            #To MAVROS
             finalPoseStamped.header.stamp = rospy.Time.now()
             finalPoseStamped.header.frame_id = self.base_link
             finalPoseStamped.pose.position.x = self.droneTargetPosX
@@ -470,11 +482,16 @@ class drone_control_node(object):
             finalPoseStamped.pose.orientation.z = self.droneTargetQuatZ
             finalPoseStamped.pose.orientation.w = self.droneTargetQuatW
             self.dron_position_pub.publish(finalPoseStamped)
+            #Current Status
+            self.dron_control_mode_pub.publish("manual")
+            
             status = bool()
             status=False
             self.automode_pub.publish(status)
-            #rospy.loginfo(finalPoseStamped)
+            #rospy.loginfo("Node:" + finalPoseStamped)
+            
         elif self.mode == "auto":
+            #To MAVROS
             rospy.loginfo("Drone Control Node: auto")
             finalPoseStamped.header.stamp = self.droneNavtime
             finalPoseStamped.header.frame_id = self.base_link
@@ -486,9 +503,26 @@ class drone_control_node(object):
             finalPoseStamped.pose.orientation.z = self.droneNavQuatZ
             finalPoseStamped.pose.orientation.w = self.droneNavQuatW
             self.dron_position_pub.publish(finalPoseStamped)
+            
+            # For nagvation use
+            #finalPoseStamped.header.stamp = rospy.Time.now()
+            #finalPoseStamped.header.frame_id = self.base_link
+            #finalPoseStamped.pose.position.x = self.droneTargetPosX
+            #finalPoseStamped.pose.position.y = self.droneTargetPosY
+            #finalPoseStamped.pose.position.z = self.droneTargetPosZ
+            #finalPoseStamped.pose.orientation.x = self.droneTargetQuatX
+            #finalPoseStamped.pose.orientation.y = self.droneTargetQuatY
+            #finalPoseStamped.pose.orientation.z = self.droneTargetQuatZ
+            #finalPoseStamped.pose.orientation.w = self.droneTargetQuatW
+            #self.dron_nagvation_pose_pub.publish(finalPoseStamped)
+            #Current Status
+            self.dron_control_mode_pub.publish("auto")
+            
             status = bool()
             status=True
             self.automode_pub.publish(status)
+            #rospy.loginfo(finalPoseStamped)
+            
         else:
             self.mode = "manual"
         self.root.after(2,self.control_node_body)
