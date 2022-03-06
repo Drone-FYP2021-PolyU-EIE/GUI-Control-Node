@@ -62,10 +62,9 @@ git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 roslaunch dron_control_node lauchDroneControlNode.launch 
 ```
 
-## Update log
-```
-2022-3-7-01:21 Upload the new version of ```control_node.py``` aim to let the navgation program know whether start the program or stop it
-```
+## Update Blog
+2022-3-7-01:21 Upload the new version of `control_node.py` aim to let the navgation program know whether start the program or stop it
+
 
 ![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
 
