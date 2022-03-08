@@ -19,9 +19,7 @@ except:
 import rospy
 import math
 import message_filters # To Achieve Multiple subscriber
-#from std_msgs.msg import Float32
-#from std_msgs.msg import Float64
-#from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 import threading
 import tkinter as tk
 import tkinter.font as tkfont
@@ -36,6 +34,10 @@ from mavros_msgs.msg import State
 class drone_control_node(object):
     
     def __init__(self):
+        # Tells rospy the name of the node.
+        # Anonymous = True makes sure the node has a unique name. Random
+        # numbers are added to the end of the name.
+        rospy.init_node("drone_control", anonymous=True, disable_signals=True)
 
         # ROS loop rate
         # Rate
@@ -45,7 +47,7 @@ class drone_control_node(object):
         # e.g. self.vesc1_pub = rospy.Publisher(vesc1_ns + '/commands/motor/speed', Float64, queue_size=10)
         self.dron_position_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)
         self.dron_control_mode_pub = rospy.Publisher("/drone/current/control_mode", String, queue_size=1)
-        self.dron_nagvation_pose_pub = rospy.Publisher("/drone/nagvation/pos", String, queue_size=1)
+        self.dron_nagvation_pose_pub = rospy.Publisher("/drone/nagvation/pos", PoseStamped, queue_size=1)
         # un doc change
         self.automode_pub = rospy.Publisher("/auto_mode/status", Bool, queue_size=1)
         
@@ -57,17 +59,11 @@ class drone_control_node(object):
         self.target_pos_sub.registerCallback(self.callback_target_position)
         self.base_link="base_link"
         
-        # Tells rospy the name of the node.
-        # Anonymous = True makes sure the node has a unique name. Random
-        # numbers are added to the end of the name.
-        rospy.init_node("drone_control", anonymous=True, disable_signals=True)
-
-
         #setup variable
         self.mode="manual"
         
         # Manual Mode false safe
-        self.dronePosSafe = false
+        self.dronePosSafe = False
         #target POS by GUI manual input
         self.dronePosX =0.0
         self.dronePosY =0.0
@@ -87,7 +83,7 @@ class drone_control_node(object):
         self.droneLocalRotZ =0.0
 
         # Auto mode false safe
-        self.droneTargetPosSafe = false
+        self.droneTargetPosSafe = False
         # target POS by GUI manual input
         self.droneTargetPosX =0.0
         self.droneTargetPosY =0.0
@@ -469,6 +465,7 @@ class drone_control_node(object):
 
     def control_node_body(self):
         finalPoseStamped = PoseStamped()
+        targetPoseStamped = PoseStamped()
         if self.mode == "manual":
             #rospy.loginfo("Drone Control Node: Manual Mode Running")
             #To MAVROS
@@ -505,16 +502,17 @@ class drone_control_node(object):
             self.dron_position_pub.publish(finalPoseStamped)
             
             # For nagvation use
-            #finalPoseStamped.header.stamp = rospy.Time.now()
-            #finalPoseStamped.header.frame_id = self.base_link
-            #finalPoseStamped.pose.position.x = self.droneTargetPosX
-            #finalPoseStamped.pose.position.y = self.droneTargetPosY
-            #finalPoseStamped.pose.position.z = self.droneTargetPosZ
-            #finalPoseStamped.pose.orientation.x = self.droneTargetQuatX
-            #finalPoseStamped.pose.orientation.y = self.droneTargetQuatY
-            #finalPoseStamped.pose.orientation.z = self.droneTargetQuatZ
-            #finalPoseStamped.pose.orientation.w = self.droneTargetQuatW
-            #self.dron_nagvation_pose_pub.publish(finalPoseStamped)
+            targetPoseStamped.header.stamp = rospy.Time.now()
+            targetPoseStamped.header.frame_id = self.base_link
+            targetPoseStamped.pose.position.x = self.droneTargetPosX
+            targetPoseStamped.pose.position.y = self.droneTargetPosY
+            targetPoseStamped.pose.position.z = self.droneTargetPosZ
+            targetPoseStamped.pose.orientation.x = self.droneTargetQuatX
+            targetPoseStamped.pose.orientation.y = self.droneTargetQuatY
+            targetPoseStamped.pose.orientation.z = self.droneTargetQuatZ
+            targetPoseStamped.pose.orientation.w = self.droneTargetQuatW
+            self.dron_nagvation_pose_pub.publish(targetPoseStamped)
+
             #Current Status
             self.dron_control_mode_pub.publish("auto")
             
