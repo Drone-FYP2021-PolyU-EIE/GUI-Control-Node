@@ -6,6 +6,7 @@ dron_control_node
 `/drone/input_postion/pose`, `PoseStamped` get the pos from the vision nagvation system         
 `/drone/ground_control/pose`, `PoseStamped` (porposted) get the pos from the Ground Control manual input(for Ground Control use)
 `/detection_result/image`, `Image` (porposted) get the detection result and show in the GUI
+
 `/drone/set/control_mode`, `String` (porposted) set the control mode(for Ground Control use)                  
 `/drone/set/px4_mode`, `String` (porposted) set the control mode(for Ground Control use)                      
 ### Output of the Node  
