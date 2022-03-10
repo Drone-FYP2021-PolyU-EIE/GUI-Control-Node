@@ -16,10 +16,11 @@ except:
     sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
     sys.path.insert(1,'/opt/ros/melodic/lib/python2.7/dist-packages')
 
+
 import rospy
 import math
 import message_filters # To Achieve Multiple subscriber
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String
 import threading
 import tkinter as tk
 import tkinter.font as tkfont
@@ -30,6 +31,7 @@ from geometry_msgs.msg import PoseStamped, Quaternion, Point
 from mavros_msgs.srv import CommandBool, SetMode
 from mavros_msgs.msg import State
 
+from jsk_recognition_msgs.msg import BoolStamped    # for navigation node message filters use
 
 class drone_control_node(object):
     
@@ -49,7 +51,7 @@ class drone_control_node(object):
         self.dron_control_mode_pub = rospy.Publisher("/drone/current/control_mode", String, queue_size=1)
         self.dron_nagvation_pose_pub = rospy.Publisher("/drone/nagvation/pos", PoseStamped, queue_size=1)
         # un doc change
-        self.automode_pub = rospy.Publisher("/auto_mode/status", Bool, queue_size=1)
+        self.automode_pub = rospy.Publisher("/auto_mode/status", BoolStamped, queue_size=1)
         
         # Node is subscribing to the topic
         # Subscribe to drone state
@@ -482,8 +484,9 @@ class drone_control_node(object):
             #Current Status
             self.dron_control_mode_pub.publish("manual")
             
-            status = bool()
-            status=False
+            status = BoolStamped()
+            status.header.stamp = rospy.Time.now()
+            status.data=False
             self.automode_pub.publish(status)
             #rospy.loginfo("Node:" + finalPoseStamped)
             
@@ -516,8 +519,9 @@ class drone_control_node(object):
             #Current Status
             self.dron_control_mode_pub.publish("auto")
             
-            status = bool()
-            status=True
+            status = BoolStamped()
+            status.header.stamp = rospy.Time.now()
+            status.data=True
             self.automode_pub.publish(status)
             #rospy.loginfo(finalPoseStamped)
             
@@ -542,5 +546,3 @@ if __name__ == '__main__':
     my_node.start()
 
 
-
-        
