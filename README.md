@@ -72,8 +72,11 @@ roslaunch dron_control_node lauchDroneControlNode.launch
 3. Click Offboard button to change the mode
 
 ## Update Blog
-2022-3-7-01:21 Upload the new version of `control_node.py` aim to let the navgation program know whether start the program or stop it
-
+2022-3-7-01:21 Upload the new version of `control_node.py` aim to let the navgation program know whether start the program or stop it <br />
+2022-3-11-02:15 Update `control_node.py`, change the message type of `/auto_mode/status` to BoolStamped as the navigation node message filter time synchronizer require header. The BoolStamped message type require `jsk_recognition_msgs` which can install by  <br />
+`sudo apt-get install ros-noetic-jsk-pcl-ros` <br />
+`sudo apt-get install ros-noetic-jsk-rviz-plugins` <br />
+`sudo apt-get install ros-noetic-ros-numpy` <br />
 
 ![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
 
