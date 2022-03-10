@@ -40,7 +40,8 @@ catkin_make --cmake-args \
 ```
 after you build the package in the catkin ws, now the python and python3 system path are both fuck up       
 (Told you already this is riskly)      
-to fix this we must go the py and py3 to fix sys path ourselves                     
+the program will try to auto fix this issuess  
+but if it does not work do the following
 ### opt1: do everytime after source deve
 ```python
 #python3
@@ -50,17 +51,18 @@ python3
 ```
 READ this very carefully
 **for Python3** enusre the tf package's sys path is on top of the `'/opt/ros/melodic/lib/python2.7/dist-packages'`
-sys.path.remove(python2_path)
-sys.path.append(python2_path)
-### other opt [read](https://stackoverflow.com/questions/31414041/how-to-prepend-a-path-to-sys-path-in-python?answertab=votes)
+sys.path.remove(python2_path)                   
+sys.path.append(python2_path)                   
+### other opt [read](https://stackoverflow.com/questions/31414041/how-to-prepend-a-path-to-sys-path-in-python?answertab=votes)                  
 
 
 
 ## install
 ```bash
-sudo apt-get install python-tk
-sudo apt-get install python3-tk
+sudo apt-get install -y python-tk
+sudo apt-get install -y python3-tk
 pip3 install netifaces
+sudo apt-get install -y ros-noetic-jsk-pcl-ros ros-noetic-jsk-rviz-plugins ros-noetic-ros-numpy
 cd <catkin_ws>
 git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 roslaunch dron_control_node lauchDroneControlNode.launch 
@@ -74,10 +76,9 @@ roslaunch dron_control_node lauchDroneControlNode.launch
 ## Update Blog
 2022-3-7-01:21 Upload the new version of `control_node.py` aim to let the navgation program know whether start the program or stop it <br />
 2022-3-11-02:15 Update `control_node.py`, change the message type of `/auto_mode/status` to BoolStamped as the navigation node message filter time synchronizer require header. The BoolStamped message type require `jsk_recognition_msgs` which can install by  <br />
-`sudo apt-get install ros-noetic-jsk-pcl-ros` <br />
-`sudo apt-get install ros-noetic-jsk-rviz-plugins` <br />
-`sudo apt-get install ros-noetic-ros-numpy` <br />
+`sudo apt-get install ros-noetic-jsk-pcl-ros ros-noetic-jsk-rviz-plugins ros-noetic-ros-numpy`
 
+## Screen
 ![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
 
 ![image](https://user-images.githubusercontent.com/45313904/156056672-ade1b6a5-aaa9-44fb-851d-aa2ca0b6d274.png)
