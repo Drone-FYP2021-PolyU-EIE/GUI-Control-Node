@@ -193,7 +193,7 @@ class drone_control_node(object):
         self.droneSafeLocalPosX =self.droneLocalPosX
         self.droneSafeLocalPosY =self.droneLocalPosY
         self.droneSafeLocalPosZ =self.droneLocalPosZ
-        (self.droneSafeLocalQuatX, self.droneSafeLocalQuatY, self.droneSafeLocalQuatZ, self.droneSafeLocalQuatW) = quaternion_from_euler(0, 0, math.radians(self.droneLocalRotZ))
+        (self.droneSafeLocalQuatX, self.droneSafeLocalQuatY, self.droneSafeLocalQuatZ, self.droneSafeLocalQuatW) = quaternion_from_euler(0, 0, self.droneLocalRotZ)
 
         
     #-Vision
