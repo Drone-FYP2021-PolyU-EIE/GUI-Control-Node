@@ -14,7 +14,7 @@ except:
     sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
     from tf.transformations import euler_from_quaternion, quaternion_from_euler
     sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
-    sys.path.insert(1,'/opt/ros/melodic/lib/python2.7/dist-packages')
+    sys.path.insert(0,'/opt/ros/melodic/lib/python2.7/dist-packages')
 
 
 import rospy
@@ -22,6 +22,7 @@ import math
 import message_filters # To Achieve Multiple subscriber
 from std_msgs.msg import String
 import threading
+from multiprocessing import Process
 import tkinter as tk
 import tkinter.font as tkfont
 import time
@@ -59,6 +60,8 @@ class drone_control_node(object):
         self.local_pos_sub.registerCallback(self.callback_local_position)
         self.target_pos_sub = message_filters.Subscriber("/drone/input_postion/pose", PoseStamped)
         self.target_pos_sub.registerCallback(self.callback_target_position)
+        self.px4_state_sub = message_filters.Subscriber("/mavros/state", State)
+        self.px4_state_sub.registerCallback(self.callback_px4_state)
         self.base_link="base_link"
         
         #setup variable
@@ -141,6 +144,11 @@ class drone_control_node(object):
         self.droneLocRotYInfo = tk.StringVar(self.root, value="0.0")
         self.droneLocRotZInfo = tk.StringVar(self.root, value="0.0")
 
+        #px4 state
+        self.isPX4_armed= False
+        self.isPX4_connected= False
+        self.px4_mode= ""
+
 
     #callback_local_position
     def callback_local_position(self, msg):
@@ -173,6 +181,13 @@ class drone_control_node(object):
         self.droneNavQuatZ = msg.pose.orientation.z
         self.droneNavQuatW = msg.pose.orientation.w
         self.droneNavPosSafe =True
+
+    #callback_px4_postion(input)
+    def callback_px4_state(self, msg):
+        self.isPX4_armed= msg.armed
+        self.isPX4_connected= msg.connected
+        self.px4_mode= msg.mode
+
 
     #valid is number(float)
     def validateIsFloat(self, action, index, value_if_allowed, prior_value, text, validation_type, trigger_type, widget_name):
@@ -258,6 +273,17 @@ class drone_control_node(object):
         self.modeDaemon = threading.Thread(target = self.px4SetMode('OFFBOARD'),daemon = True)
         self.modeDaemon.start()
 
+    def px4LandMode(self):
+        #later do
+        rospy.loginfo("Drone Control Node: Setting PX4 Mode to Offboard Mode")
+        self.modeDaemon = threading.Thread(target = self.px4SetMode('AUTO.LAND'),daemon = True)
+        self.modeDaemon.start()
+
+    def px4RTLMode(self):
+        rospy.loginfo("Drone Control Node: Setting PX4 Mode to AUTO.RTL(Return to Staring) Mode")
+        self.modeDaemon = threading.Thread(target = self.px4SetMode('AUTO.RTL'),daemon = True)
+        self.modeDaemon.start()
+
     def setDronPosXYZ(self,X=0.0,Y=0.0,Z=0.0,Zr=0.0):
         #target POS by GUI manual input
         self.droneTargetPosX =X
@@ -304,6 +330,11 @@ class drone_control_node(object):
         self.dronePosYInp.set(round(self.droneLocalPosY,3))
         self.dronePosZInp.set(round(self.droneLocalPosZ,3))
         self.droneRotZInp.set(round(math.degrees(self.droneLocalRotZ),3))
+    
+    def stopmanual(self):
+        self.manualMode()
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ,self.droneLocalRotZ)
+
 
     #GUI Body
     def gui(self):
@@ -311,7 +342,7 @@ class drone_control_node(object):
         #self.root.destroy()
         #self.root = tk.Tk()
         self.root.title("Control Node GUI: Onboard")
-        self.root.configure(bg='grey')
+        #self.root.configure(bg='grey')
 
         #title 
         titlef = tk.Frame(self.root)
@@ -336,24 +367,30 @@ class drone_control_node(object):
         self.autoModeBut = tk.Button(target, text="Auto", width=10,bd=2, cursor="exchange", command = lambda: self.autoMode())
         self.autoModeBut.grid(row=1, column=1, columnspan=1) 
 
-        self.semiHardModeBut = tk.Button(target, text="Vision Pos", width=10,bd=2, cursor="exchange", command = lambda: self.visionPosMode())
+        self.semiHardModeBut = tk.Button(target, text="Remote", width=10,bd=2, cursor="exchange", command = lambda: self.visionPosMode())
         self.semiHardModeBut.grid(row=1, column=2, columnspan=1)
 
         self.manualModeBut = tk.Button(target, text="Manual", width=10,bd=2, cursor="exchange", command = lambda: self.manualMode())
         self.manualModeBut.grid(row=1, column=0, columnspan=1)
         
         #Select Px4 Flight Mode
-        px4Mode = tk.LabelFrame(self.root, text="PX4 Flight Mode",width=200)
-        px4Mode.grid(row=2, column=0, columnspan=3,sticky="W")
+        self.px4Mode = tk.LabelFrame(self.root, text="PX4 Flight Mode",width=200)
+        self.px4Mode.grid(row=2, column=0, columnspan=5,sticky="W")
 
-        px4ArmBut = tk.Button(px4Mode, text="Arm", width=10,bd=2, cursor="exchange", command = lambda: self.px4ArmMode())
-        px4ArmBut.grid(row=1, column=0, columnspan=1) 
+        self.px4ArmBut = tk.Button(self.px4Mode, text="Arm", width=10,bd=2, cursor="exchange", command = lambda: self.px4ArmMode())
+        self.px4ArmBut.grid(row=1, column=0, columnspan=1) 
 
-        px4PosBut = tk.Button(px4Mode, text="Position Mode", width=10,bd=2, cursor="exchange", command = lambda: self.px4PosMode())
-        px4PosBut.grid(row=1, column=2, columnspan=1) 
+        self.px4PosBut = tk.Button(self.px4Mode, text="Position Mode", width=10,bd=2, cursor="exchange", command = lambda: self.px4PosMode())
+        self.px4PosBut.grid(row=1, column=2, columnspan=1) 
 
-        px4OffBoardBut = tk.Button(px4Mode, text="Offboard Mode", width=10,bd=2, cursor="exchange", command = lambda: self.px4OffBoardMode())
-        px4OffBoardBut.grid(row=1, column=1, columnspan=1) 
+        self.px4OffBoardBut = tk.Button(self.px4Mode, text="Offboard Mode", width=10,bd=2, cursor="exchange", command = lambda: self.px4OffBoardMode())
+        self.px4OffBoardBut.grid(row=1, column=1, columnspan=1) 
+
+        self.px4LandBut = tk.Button(self.px4Mode, text="Auto Land", width=10,bd=2, cursor="exchange", command = lambda: self.px4LandMode())
+        self.px4LandBut.grid(row=1, column=3, columnspan=1) 
+
+        self.px4RTLBut = tk.Button(self.px4Mode, text="Return To Start", width=15,bd=2, cursor="exchange", command = lambda: self.px4RTLMode())
+        self.px4RTLBut.grid(row=1, column=4, columnspan=1) 
 
         #Drone Movement
         droneMovement = tk.LabelFrame(self.root, text="Drone Movement",width=200)
@@ -494,12 +531,48 @@ class drone_control_node(object):
             self.droneLocRotXInfo.set('X(deg):%.2f'% (math.degrees(self.droneLocalRotX)))
             self.droneLocRotYInfo.set('Y(deg):%.2f'% (math.degrees(self.droneLocalRotY)))
             self.droneLocRotZInfo.set('Z(deg):%.2f'% (math.degrees(self.droneLocalRotZ)))
+
+            #contorl mode
             if self.mode == "auto":
                 self.manualModeBut.config(state=tk.NORMAL, bg="grey")
                 self.autoModeBut.config(state=tk.DISABLED, bg="green")
             elif self.mode == "manual":
                 self.manualModeBut.config(state=tk.DISABLED, bg="green")
                 self.autoModeBut.config(state=tk.NORMAL, bg= "grey")
+            
+            #PX4 State
+            if self.isPX4_armed:
+                self.px4ArmBut.config(bg="green")
+            else:
+                self.px4ArmBut.config(bg="red")
+            
+            if self.px4_mode == "POSCTL":
+                self.px4PosBut.config(bg="green")
+                self.px4OffBoardBut.config(bg="grey")
+                self.px4LandBut.config(bg="grey")
+                self.px4RTLBut.config(bg="grey")
+            elif self.px4_mode == "OFFBOARD":
+                self.px4OffBoardBut.config(bg="green")
+                self.px4PosBut.config(bg="grey")
+                self.px4LandBut.config(bg="grey")
+                self.px4RTLBut.config(bg="grey")
+            elif self.px4_mode == "AUTO.LAND":
+                self.px4OffBoardBut.config(bg="grey")
+                self.px4PosBut.config(bg="grey")
+                self.px4LandBut.config(bg="green")
+                self.px4RTLBut.config(bg="grey")
+            elif self.px4_mode == "AUTO.RTL":
+                self.px4OffBoardBut.config(bg="grey")
+                self.px4PosBut.config(bg="grey")
+                self.px4LandBut.config(bg="grey")
+                self.px4RTLBut.config(bg="green")
+            else:
+                self.px4OffBoardBut.config(bg="grey")
+                self.px4PosBut.config(bg="grey")
+                self.px4LandBut.config(bg="grey")
+                self.px4RTLBut.config(bg="grey")
+
+
             #rospy.loginfo("Drone Control Node: local pos X:%f,Y:%f,Z:%f",self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ)
             #if not rospy.is_shutdown():
                 #self.GUIInfo.start()
