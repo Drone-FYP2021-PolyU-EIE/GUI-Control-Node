@@ -18,6 +18,7 @@ dron_control_node
 
 ## {riskly}Setup Workspace(catkin make)
 ```bash
+$cd to your catkin ws frist
 pip3 uninstall em
 pip3 install empy
 source devel/setup.bash
