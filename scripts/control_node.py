@@ -311,6 +311,7 @@ class drone_control_node(object):
         #self.root.destroy()
         #self.root = tk.Tk()
         self.root.title("Control Node GUI: Onboard")
+        self.root.configure(bg='grey')
 
         #title 
         titlef = tk.Frame(self.root)
@@ -332,14 +333,14 @@ class drone_control_node(object):
         target = tk.LabelFrame(self.root, text="Target Control Mode",width=200)
         target.grid(row=1, column=0, columnspan=3,sticky="W")
 
-        autoModeBut = tk.Button(target, text="Auto", width=10,bd=2, cursor="exchange", command = lambda: self.autoMode())
-        autoModeBut.grid(row=1, column=1, columnspan=1) 
+        self.autoModeBut = tk.Button(target, text="Auto", width=10,bd=2, cursor="exchange", command = lambda: self.autoMode())
+        self.autoModeBut.grid(row=1, column=1, columnspan=1) 
 
-        semiHardModeBut = tk.Button(target, text="Vision Pos", width=10,bd=2, cursor="exchange", command = lambda: self.visionPosMode())
-        semiHardModeBut.grid(row=1, column=2, columnspan=1)
+        self.semiHardModeBut = tk.Button(target, text="Vision Pos", width=10,bd=2, cursor="exchange", command = lambda: self.visionPosMode())
+        self.semiHardModeBut.grid(row=1, column=2, columnspan=1)
 
-        manualModeBut = tk.Button(target, text="Manual", width=10,bd=2, cursor="exchange", command = lambda: self.manualMode())
-        manualModeBut.grid(row=1, column=0, columnspan=1)
+        self.manualModeBut = tk.Button(target, text="Manual", width=10,bd=2, cursor="exchange", command = lambda: self.manualMode())
+        self.manualModeBut.grid(row=1, column=0, columnspan=1)
         
         #Select Px4 Flight Mode
         px4Mode = tk.LabelFrame(self.root, text="PX4 Flight Mode",width=200)
@@ -493,6 +494,12 @@ class drone_control_node(object):
             self.droneLocRotXInfo.set('X(deg):%.2f'% (math.degrees(self.droneLocalRotX)))
             self.droneLocRotYInfo.set('Y(deg):%.2f'% (math.degrees(self.droneLocalRotY)))
             self.droneLocRotZInfo.set('Z(deg):%.2f'% (math.degrees(self.droneLocalRotZ)))
+            if self.mode == "auto":
+                self.manualModeBut.config(state=tk.NORMAL, bg="grey")
+                self.autoModeBut.config(state=tk.DISABLED, bg="green")
+            elif self.mode == "manual":
+                self.manualModeBut.config(state=tk.DISABLED, bg="green")
+                self.autoModeBut.config(state=tk.NORMAL, bg= "grey")
             #rospy.loginfo("Drone Control Node: local pos X:%f,Y:%f,Z:%f",self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ)
             #if not rospy.is_shutdown():
                 #self.GUIInfo.start()
@@ -539,7 +546,7 @@ class drone_control_node(object):
 
             #Current Status
             self.dron_control_mode_pub.publish("manual")
-            self.automode_pub.publish(False)
+            self.automode_pub.publish(rospy.Time.now(),False)
             #rospy.loginfo("Node:" + finalPoseStamped)
             
         elif self.mode == "auto":
@@ -596,7 +603,7 @@ class drone_control_node(object):
 
             #Current Status
             self.dron_control_mode_pub.publish("auto")
-            self.automode_pub.publish(True)
+            self.automode_pub.publish(rospy.Time.now(),True)
             #rospy.loginfo(finalPoseStamped)
             
         else:
