@@ -543,10 +543,13 @@ class drone_control_node(object):
                 finalPoseStamped.pose.orientation.z = self.droneSafeLocalQuatZ
                 finalPoseStamped.pose.orientation.w = self.droneSafeLocalQuatW
             self.dron_position_pub.publish(finalPoseStamped)
-
+            self.dron_nagvation_pose_pub.publish(finalPoseStamped)
             #Current Status
             self.dron_control_mode_pub.publish("manual")
-            self.automode_pub.publish(rospy.Time.now(),False)
+            status = BoolStamped()
+            status.header.stamp = rospy.Time.now()
+            status.data=False
+            self.automode_pub.publish(status)
             #rospy.loginfo("Node:" + finalPoseStamped)
             
         elif self.mode == "auto":
@@ -603,7 +606,10 @@ class drone_control_node(object):
 
             #Current Status
             self.dron_control_mode_pub.publish("auto")
-            self.automode_pub.publish(rospy.Time.now(),True)
+            status = BoolStamped()
+            status.header.stamp = rospy.Time.now()
+            status.data=True
+            self.automode_pub.publish(status)
             #rospy.loginfo(finalPoseStamped)
             
         else:
@@ -625,5 +631,3 @@ if __name__ == '__main__':
     #ControlBody.start()
     ##start ROS
     my_node.start()
-
-
