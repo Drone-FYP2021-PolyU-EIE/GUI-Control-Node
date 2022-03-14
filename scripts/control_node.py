@@ -619,10 +619,7 @@ class drone_control_node(object):
             self.dron_nagvation_pose_pub.publish(finalPoseStamped)
             #Current Status
             self.dron_control_mode_pub.publish("manual")
-            status = BoolStamped()
-            status.header.stamp = rospy.Time.now()
-            status.data=False
-            self.automode_pub.publish(status)
+            self.automode_pub.publish(rospy.Time.now(),False)
             #rospy.loginfo("Node:" + finalPoseStamped)
             
         elif self.mode == "auto":
@@ -680,9 +677,7 @@ class drone_control_node(object):
             #Current Status
             self.dron_control_mode_pub.publish("auto")
             status = BoolStamped()
-            status.header.stamp = rospy.Time.now()
-            status.data=True
-            self.automode_pub.publish(status)
+            self.automode_pub.publish(rospy.Time.now(),True)
             #rospy.loginfo(finalPoseStamped)
             
         else:
