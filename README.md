@@ -18,6 +18,7 @@ dron_control_node
 
 ## {riskly}Setup Workspace(catkin make)
 ```bash
+$cd to your catkin ws frist
 pip3 uninstall em
 pip3 install empy
 source devel/setup.bash
@@ -62,7 +63,7 @@ sys.path.append(python2_path)
 sudo apt-get install -y python-tk
 sudo apt-get install -y python3-tk
 pip3 install netifaces
-sudo apt-get install -y ros-noetic-jsk-pcl-ros ros-noetic-jsk-rviz-plugins ros-noetic-ros-numpy
+sudo apt-get install -y ros-$ROS_DISTRO-jsk-pcl-ros ros-$ROS_DISTRO-jsk-rviz-plugins ros-$ROS_DISTRO-ros-numpy
 cd <catkin_ws>
 git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 roslaunch dron_control_node lauchDroneControlNode.launch 
