@@ -13,7 +13,7 @@ dron_control_node
 `/mavros/setpoint_position/local`, `PoseStamped` (>30Hz) pos pass to the mavros to excite       
 `/auto_mode/status`, `Bool` let the navgation program know whether start the program or stop it                       
 `/drone/current/control_mode`, `String` (>30Hz will chagne to 20hz later) send the current control mode out (`"auto"` or `"manual"`)                       
-`/drone/nagvation/pos`, `PoseStamped` (>20Hz) pos pass to the vision nagvation to excite
+`/drone/nagvation/pos`, `PoseStamped` (>30Hz) pos pass to the vision nagvation to excite
 
 
 ## {riskly}Setup Workspace(catkin make)
