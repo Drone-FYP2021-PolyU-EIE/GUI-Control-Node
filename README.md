@@ -15,8 +15,8 @@ dron_control_node
 `/drone/current/control_mode`, `String` (>30Hz will chagne to 20hz later) send the current control mode out (`"auto"` or `"manual"`)                       
 `/drone/nagvation/pos`, `PoseStamped` (>30Hz) pos pass to the vision nagvation to excite
 
-
-## {riskly}Setup Workspace(catkin make)
+# For ubuntu 18.04
+## Setup Workspace(catkin make)
 ```bash
 $cd to your catkin ws frist
 pip3 uninstall em
@@ -39,7 +39,7 @@ catkin_make --cmake-args \
             -DPYTHON_INCLUDE_DIR=/usr/include/python3.6m \
             -DPYTHON_LIBRARY=/usr/lib/aarch64-linux-gnu/libpython3.6m.so
 ```
-after you build the package in the catkin ws, now the python and python3 system path are both fuck up       
+after you build the package in the catkin ws, now the python and python3 system path may have some problem    
 (Told you already this is riskly)      
 the program will try to auto fix this issuess  
 but if it does not work do the following
