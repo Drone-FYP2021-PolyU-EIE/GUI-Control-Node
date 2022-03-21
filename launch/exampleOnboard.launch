@@ -1,0 +1,7 @@
+<launch>
+    <!--onboard example-->
+    <include file="$(find dron_control_node)/launch/lauchDroneControlNode.launch" ns="wheel_left">
+		<arg name="onboard" value="true"/>
+		<arg name="image" value="false"/>
+	</include>
+</launch> 

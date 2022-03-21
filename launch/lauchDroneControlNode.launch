@@ -1,6 +1,12 @@
 <launch>
-
-    <node pkg="dron_control_node" type="control_node.py" name="control_node" output="screen"/>
-    
-
+    <!-- control node: parameters -->
+    <arg name="onboard" default="true" />
+    <arg name="image" default="false" />
+    <!-- control node -->
+    <node pkg="dron_control_node" type="control_node.py" name="control_node" output="screen">
+        <!-- true=onboard, false=offboard -->
+        <param name="onboard" type="bool" value="$(arg onboard)" />
+        <!-- true=image, false=turn off image -->
+        <param name="image" type="bool" value="$(arg image)" />
+    </node>
 </launch>

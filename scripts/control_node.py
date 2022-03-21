@@ -21,11 +21,14 @@ import rospy
 import math
 import message_filters # To Achieve Multiple subscriber
 from std_msgs.msg import String
+import time
 import threading
 from multiprocessing import Process
+#import tkthread; tkthread.tkinstall()
+#from tkthread import tk
 import tkinter as tk
 import tkinter.font as tkfont
-import time
+
 
 # 3D point & Stamped Pose msgs
 from geometry_msgs.msg import PoseStamped, Quaternion, Point
@@ -46,6 +49,15 @@ class drone_control_node(object):
         # Rate
         self.loop_rate = rospy.Rate(40)
         
+        # Get param
+        self.isOnboard = rospy.get_param('~onboard')
+        self.needImage = rospy.get_param('~image')
+        if self.isOnboard:
+            rospy.loginfo("Drone Control Node: Onboard")
+            #rospy.loginfo(self.isOnboard)
+        else:
+            rospy.loginfo("Drone Control Node: Offboard")
+
         # Node is publishing to the topic
         # e.g. self.vesc1_pub = rospy.Publisher(vesc1_ns + '/commands/motor/speed', Float64, queue_size=10)
         self.dron_position_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=1)
@@ -144,10 +156,17 @@ class drone_control_node(object):
         self.droneLocRotYInfo = tk.StringVar(self.root, value="0.0")
         self.droneLocRotZInfo = tk.StringVar(self.root, value="0.0")
 
-        #px4 state
+        # px4 state
         self.isPX4_armed= False
         self.isPX4_connected= False
         self.px4_mode= ""
+
+        # drone step
+        self.verticalStep= 0.25
+        self.horizontalStep= 0.25
+        self.rotationalStep= 45.0
+
+        #self.armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
 
 
     #callback_local_position
@@ -238,21 +257,24 @@ class drone_control_node(object):
     #-arm PX4
     def setPx4ArmMode(self):
         rospy.loginfo("Drone Control Node: Trying PX4 Mode to Arm....")
-        rospy.wait_for_service('mavros/cmd/arming')
+        #rospy.wait_for_service('mavros/cmd/arming')
         try:
-            armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
-            armService(True)
+            self.armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
+            self.armService(True)
         except rospy.ServiceException as e:
             rospy.logwarn("[Drone Control Node] Aming service failed: %s"%e)
     def px4ArmMode(self):
         rospy.loginfo("Drone Control Node: Starting PX4 Mode to Arm")
-        self.armDaemon = threading.Thread(target = self.setPx4ArmMode(),daemon = True)
-        self.armDaemon.start()
+        self.changeModeSafety()
+        self.armDaemon = threading.Thread(target = self.setPx4ArmMode()).start()
+        #self.armDaemon = threading.Thread(target = self.setPx4ArmMode(),daemon = True).start()
+        #self.armDaemon = Process(target = self.setPx4ArmMode(),daemon = True)
+        #self.armDaemon.start()
 
     #-px4 setmode
     def px4SetMode(self, setToMode):
         rospy.loginfo("Drone Control Node: Trying to set PX4 Mode to %s",setToMode)
-        rospy.wait_for_service('mavros/set_mode')
+        #rospy.wait_for_service('mavros/set_mode')
         try:
             flightModeService = rospy.ServiceProxy('mavros/set_mode', SetMode)
             flightModeService(custom_mode= setToMode)
@@ -302,28 +324,49 @@ class drone_control_node(object):
     def droneForward(self):
         #later do
         rospy.loginfo("Drone Control Node: Drone Forward")
-        #modeDaemon = threading.Thread(target = self.px4SetMode('OFFBOARD'),daemon = True
+        self.setDronPosXYZ(self.droneLocalPosX+self.horizontalStep,self.droneLocalPosY,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ))
     
     def droneLeft(self):
         #later do
         rospy.loginfo("Drone Control Node: Drone Left")
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY+self.horizontalStep,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ))
     
     def droneStop(self):
         #later do
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ))
         rospy.loginfo("Drone Control Node: Drone Stop")
+        
 
     def droneRight(self):
         #later do
         rospy.loginfo("Drone Control Node: Drone Right")
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY-self.horizontalStep,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ))
     
     def droneBackward(self):
         #later do
         rospy.loginfo("Drone Control Node: Drone Backward")
+        self.setDronPosXYZ(self.droneLocalPosX-self.horizontalStep,self.droneLocalPosY,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ))
 
     #-Vertical Movement
     def droneUp(self):
         #later do
-        rospy.loginfo("Drone Control Node: Drone Backward")
+        rospy.loginfo("Drone Control Node: Drone Moving Up")
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ+self.verticalStep,math.degrees(self.droneLocalRotZ))
+    
+    def droneDown(self):
+        #later do
+        rospy.loginfo("Drone Control Node: Drone Moving Down")
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ-self.verticalStep,math.degrees(self.droneLocalRotZ))
+
+    def droneRotateLeft(self):
+        #later do
+        rospy.loginfo("Drone Control Node: Drone Rotating Left")
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ)-self.rotationalStep)
+    
+    def droneRotateRight(self):
+        #later do
+        rospy.loginfo("Drone Control Node: Drone Rotating Right")
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ)+self.rotationalStep)
 
     def takeLocal(self):
         self.dronePosXInp.set(round(self.droneLocalPosX,3))
@@ -333,7 +376,7 @@ class drone_control_node(object):
     
     def stopmanual(self):
         self.manualMode()
-        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ,self.droneLocalRotZ)
+        self.setDronPosXYZ(self.droneLocalPosX,self.droneLocalPosY,self.droneLocalPosZ,math.degrees(self.droneLocalRotZ))
 
 
     #GUI Body
@@ -341,7 +384,10 @@ class drone_control_node(object):
         rospy.loginfo("Drone Control Node: Setting PX4 Mode up GUI now")
         #self.root.destroy()
         #self.root = tk.Tk()
-        self.root.title("Control Node GUI: Onboard")
+        if self.isOnboard:
+            self.root.title("Control Node GUI: Onboard")
+        else:
+            self.root.title("Control Node GUI: Offboard")
         #self.root.configure(bg='grey')
 
         #title 
@@ -356,7 +402,10 @@ class drone_control_node(object):
         title_font = tkfont.Font(family='Helvetica', size=24, weight="bold", slant="italic")
 
         #title body
-        title = tk.Label(titlef, text="Control Node: GUI", font=title_font, anchor="e" )
+        if self.isOnboard:
+            title = tk.Label(titlef, text="Control Node: Onboard GUI", font=title_font, anchor="e" )
+        else:
+            title = tk.Label(titlef, text="Control Node: Offboard GUI", font=title_font, anchor="e" )
         title.grid(row=0, column=1,sticky="")
         titlef.grid(row=0, column=0, columnspan=5,sticky="")
 
@@ -545,6 +594,7 @@ class drone_control_node(object):
                 self.px4ArmBut.config(bg="green")
             else:
                 self.px4ArmBut.config(bg="red")
+                self.changeModeSafety()
             
             if self.px4_mode == "POSCTL":
                 self.px4PosBut.config(bg="green")
@@ -619,7 +669,7 @@ class drone_control_node(object):
             self.dron_nagvation_pose_pub.publish(finalPoseStamped)
             #Current Status
             self.dron_control_mode_pub.publish("manual")
-            self.automode_pub.publish(rospy.Time.now(),False)
+            self.automode_pub.publish(BoolStamped(data=False))
             #rospy.loginfo("Node:" + finalPoseStamped)
             
         elif self.mode == "auto":
@@ -676,8 +726,7 @@ class drone_control_node(object):
 
             #Current Status
             self.dron_control_mode_pub.publish("auto")
-            status = BoolStamped()
-            self.automode_pub.publish(rospy.Time.now(),True)
+            self.automode_pub.publish(BoolStamped(data=True))
             #rospy.loginfo(finalPoseStamped)
             
         else:
