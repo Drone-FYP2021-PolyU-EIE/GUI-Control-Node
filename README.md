@@ -1,5 +1,5 @@
 # dron_control_node
-dron_control_node
+this is a GUI for youe to control the px4 system drone
 ## Node ROS Topics
 ### Input of the Node
 `/mavros/local_position/pose`, `PoseStamped` get the currnte postion of the drone               
@@ -16,6 +16,11 @@ dron_control_node
 `/drone/nagvation/pos`, `PoseStamped` (>30Hz) pos pass to the vision nagvation to excite
 
 # For ubuntu 18.04
+## dependence
+* Python 3
+* ROS 1
+* mavros
+* gazebo(optional)
 ## install
 ```bash
 sudo apt-get install -y python-tk
