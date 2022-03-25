@@ -16,7 +16,7 @@ this is a GUI for youe to control the px4 system drone
 `/drone/nagvation/pos`, `PoseStamped` (>30Hz) pos pass to the vision nagvation to excite
 
 # For ubuntu 18.04
-## dependence
+## Prerequisites
 * Python 3
 * ROS 1
 * mavros
