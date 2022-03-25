@@ -16,6 +16,17 @@ dron_control_node
 `/drone/nagvation/pos`, `PoseStamped` (>30Hz) pos pass to the vision nagvation to excite
 
 # For ubuntu 18.04
+## install
+```bash
+sudo apt-get install -y python-tk
+sudo apt-get install -y python3-tk
+pip3 install netifaces
+pip3 install Pillow
+sudo apt-get install -y ros-$ROS_DISTRO-jsk-pcl-ros ros-$ROS_DISTRO-jsk-rviz-plugins ros-$ROS_DISTRO-ros-numpy
+cd <catkin_ws>
+git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
+roslaunch dron_control_node lauchDroneControlNode.launch 
+```
 ## Setup Workspace(catkin make)
 ```bash
 $cd to your catkin ws frist
@@ -54,19 +65,6 @@ sys.path.remove(python2_path)
 sys.path.append(python2_path)                   
 ### other opt [read](https://stackoverflow.com/questions/31414041/how-to-prepend-a-path-to-sys-path-in-python?answertab=votes)                  
 
-
-
-## install
-```bash
-sudo apt-get install -y python-tk
-sudo apt-get install -y python3-tk
-pip3 install netifaces
-pip3 install Pillow
-sudo apt-get install -y ros-$ROS_DISTRO-jsk-pcl-ros ros-$ROS_DISTRO-jsk-rviz-plugins ros-$ROS_DISTRO-ros-numpy
-cd <catkin_ws>
-git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
-roslaunch dron_control_node lauchDroneControlNode.launch 
-```
 
 ## Procedure of using control node gui
 1. Click arm button to arm the drone
