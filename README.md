@@ -23,12 +23,10 @@ this is a GUI for youe to control the px4 system drone
 * gazebo(optional)
 ## install
 ```bash
-sudo apt-get install -y python-tk
-sudo apt-get install -y python3-tk
-pip3 install netifaces
-pip3 install Pillow
+sudo apt-get install -y python-tk python3-tk
+pip3 install netifaces Pillow
 sudo apt-get install -y ros-$ROS_DISTRO-jsk-pcl-ros ros-$ROS_DISTRO-jsk-rviz-plugins ros-$ROS_DISTRO-ros-numpy
-cd <catkin_ws>
+$cd <catkin_ws>/src #cd to your catkin workspace src here
 git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
 roslaunch dron_control_node lauchDroneControlNode.launch 
 ```
