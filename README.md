@@ -83,6 +83,4 @@ sys.path.append(python2_path)
 2022-3-15: added colorfull button
 
 ## Screen
-![image](https://user-images.githubusercontent.com/45313904/156055261-3e544232-645b-46f3-a5bf-8a51c7afede9.png)
-
-![image](https://user-images.githubusercontent.com/45313904/156056672-ade1b6a5-aaa9-44fb-851d-aa2ca0b6d274.png)
+![image](https://user-images.githubusercontent.com/45313904/160270885-29227eef-3b75-47e8-a2c8-ec4a1acfe1b0.png)
