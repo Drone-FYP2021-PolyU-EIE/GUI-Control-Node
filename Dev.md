@@ -4,6 +4,7 @@ git pull upstream master
 git pull
 git add .
 git commit
+$git push
 ```
 display
 ```
@@ -18,3 +19,8 @@ sudo /usr/NX/bin/nxserver --restart
 ```
 sudo systemctl set-default graphical.target
 ```
+# test ros msg
+```bash
+rosmsg show drone_control_msgs/SetDroneState
+```
+![image](https://user-images.githubusercontent.com/45313904/160281795-a16aa2e2-587a-4a04-aa43-63e65af96279.png)
