@@ -1,20 +1,24 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>dron_control_node</name>
-  <version>0.0.0</version>
-  <description>The dron_control_node package</description>
+  <name>drone_control_node</name>
+  <version>1.0.2</version>
+  <description>The drone control node main GUI of The dron_control_node package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="robocon@todo.todo">robocon</maintainer>
+  <maintainer email="tszman.chong@connect.polyu.hk">Tsz Man, CHONG</maintainer>
+  <author email="tszman.chong@connect.polyu.hk">Tsz Man, CHONG</author>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
-
+  <license>BSD</license>
+  
+  <url type="website">https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node</url>
+  <url type="repository">https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git</url>
+  <url type="bugtracker">https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node/issues</url>
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
