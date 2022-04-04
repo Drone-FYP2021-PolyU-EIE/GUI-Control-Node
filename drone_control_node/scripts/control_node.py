@@ -719,7 +719,7 @@ class drone_control_node(object):
         if self.hasGripper:
             GripperMovement = tk.LabelFrame(self.root, text="Gripper Movement(By Servo Angle)",width=200)
             GripperMovement.grid(row=10, column=0, columnspan=10,rowspan=1,sticky="W")
-            self.servoAngleScale=tk.Scale( GripperMovement, variable = self.servoAngle, from_ = 1, to = 180, orient = tk.HORIZONTAL, width=10,length=200) 
+            self.servoAngleScale=tk.Scale( GripperMovement, variable = self.servoAngle, from_ = 0, to = 180, orient = tk.HORIZONTAL, width=10,length=200) 
             self.servoAngleScale.grid(row=0,column=0, columnspan=3)
 
         
