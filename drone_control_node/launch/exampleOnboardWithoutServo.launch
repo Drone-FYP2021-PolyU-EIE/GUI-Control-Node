@@ -3,6 +3,6 @@
     <include file="$(find drone_control_node)/launch/lauchDroneControlNode.launch">
 		<arg name="onboard" value="true"/>
 		<arg name="image" value="false"/>
-		<arg name="hasGripper" value="true"/>
+		<arg name="hasGripper" value="false"/>
 	</include>
 </launch> 

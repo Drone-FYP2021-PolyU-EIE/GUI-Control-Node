@@ -6,7 +6,7 @@ std_msgs/Header header
 bool isPx4Connected
 bool isPx4Armed
 string getPx4mode
-geometry_msgs/PoseStamped getPx4LocalPOS4
+geometry_msgs/Pose getPx4LocalPos
 bool allowRemote
 string controlMode
 

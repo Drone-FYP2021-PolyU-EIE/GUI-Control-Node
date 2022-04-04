@@ -2,11 +2,20 @@
     <!-- control node: parameters -->
     <arg name="onboard" default="true" />
     <arg name="image" default="false" />
+    <arg name="base_link" default="base_link" />
+    <arg name="allow_remote" default="true" />
+    <arg name="hasGripper" default="true" />
+
     <!-- control node -->
-    <node pkg="dron_control_node" type="control_node.py" name="control_node" output="screen">
+    <node pkg="drone_control_node" type="control_node.py" name="control_node" output="screen">
+        <!--type="str|int|double|bool|yaml" -->>
         <!-- true=onboard, false=offboard -->
         <param name="onboard" type="bool" value="$(arg onboard)" />
-        <!-- true=image, false=turn off image -->
+        <!-- true=image from realsense, false=turn off image -->
         <param name="image" type="bool" value="$(arg image)" />
+        <param name="base_link" type="str" value="$(arg base_link)" />
+        <!-- true=allow remote control, false=turn off remote control -->
+        <param name="allow_remote" type="bool" value="$(arg allow_remote)" />
+        <param name="hasGripper" type="bool" value="$(arg hasGripper)" />
     </node>
 </launch>

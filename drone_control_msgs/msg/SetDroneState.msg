@@ -3,11 +3,12 @@
 #
 
 std_msgs/Header header
+bool useCurrentPx4Mode
 string setPx4mode
-bool useLocalPos
-geometry_msgs/PoseStamped setPx4LocalPOS4
-bool allowRemote
+bool useCurrentMode
 string controlMode
+bool useLocalPos
+geometry_msgs/Pose setTargetPos
 
 # for px4mode  refer to system_status values
 # see https://mavlink.io/en/messages/common.html#MAV_STATE
