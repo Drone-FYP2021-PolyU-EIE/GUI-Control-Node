@@ -211,12 +211,12 @@ class drone_control_node(object):
         self.rotationalStep= 45.0
 
         # remote
-        self.currentTime = 0.0
+        self.currentTime = rospy.Time()
         self.allowRemote = rospy.get_param('~allow_remote')
         #self.armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
         
         # For offboard use  
-        self.off_status_Time = 0.0
+        self.off_status_Time = rospy.Time()
 
         # servo related
         self.servoAngle= tk.DoubleVar()
@@ -275,8 +275,10 @@ class drone_control_node(object):
         self.isPX4_connected= msg.connected
         self.px4_mode= msg.mode
     
+    #onboard node handle offboard node request 
     def callback_set_control_status(self, msg):
         #time filter only accept the lastest ros message
+        rospy.loginfo(msg)
         if msg.header.stamp > self.currentTime:
             self.currentTime= msg.header.stamp
             if self.allowRemote:
@@ -300,6 +302,7 @@ class drone_control_node(object):
                     self.droneTargetQuatW = msg.setTargetPos.orientation.w
                     self.droneTargetPosSafe = True
                     self.dronePosSafe = True
+                self.servoAngleScale.set(msg.servoAngle)
     
     #image
     def callback_image(self,msg):
@@ -360,11 +363,21 @@ class drone_control_node(object):
         rospy.loginfo("Drone Control Node: Setting Control to Auto Navgoation....")
 
 
-    #-Pos
+    #-Allow/Not Allow remote
     def remoteMode(self):
         self.changeModeSafety()
-        self.mode="remote"
-        rospy.loginfo("Drone Control Node: Setting Control to Remote Control....")
+        if self.allowRemote:
+            self.notAllowRemoteMode()
+            rospy.loginfo("Drone Control Node: Setting Control to Allow Remote Control....")
+        else:
+            self.allowRemoteMode()
+            rospy.loginfo("Drone Control Node: Setting Control to NOT Allow Remote Control....")
+
+    #--Allow Remote
+    def allowRemoteMode(self):
+        self.allowRemote= True
+    def notAllowRemoteMode(self):
+        self.allowRemote= False
 
     #-manual
     #--GUI set px4 target pos
@@ -382,7 +395,7 @@ class drone_control_node(object):
             rospy.loginfo("Drone Control Node: Trying PX4 Mode to Disarm....")
             #rospy.wait_for_service('mavros/cmd/arming')
             try:
-                self.armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
+                self.armService = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
                 self.armService(False)
             except rospy.ServiceException as e:
                 rospy.logwarn("[Drone Control Node] Disarm service failed: %s"%e)
@@ -391,7 +404,7 @@ class drone_control_node(object):
             rospy.loginfo("Drone Control Node: Trying PX4 Mode to Arm....")
             #rospy.wait_for_service('mavros/cmd/arming')
             try:
-                self.armService = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
+                self.armService = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
                 self.armService(True)
             except rospy.ServiceException as e:
                 rospy.logwarn("[Drone Control Node] Aming service failed: %s"%e)
@@ -408,7 +421,7 @@ class drone_control_node(object):
         rospy.loginfo("Drone Control Node: Trying to set PX4 Mode to %s",setToMode)
         #rospy.wait_for_service('mavros/set_mode')
         try:
-            flightModeService = rospy.ServiceProxy('mavros/set_mode', SetMode)
+            flightModeService = rospy.ServiceProxy('/mavros/set_mode', SetMode)
             flightModeService(custom_mode= setToMode)
         except rospy.ServiceException as e:
             rospy.logwarn("[Drone Control Node] Aming service failed: %s"%e)
@@ -568,8 +581,9 @@ class drone_control_node(object):
         self.autoModeBut = tk.Button(target, text="Auto", width=10,bd=2, cursor="exchange", command = lambda: self.autoMode())
         self.autoModeBut.grid(row=1, column=1, columnspan=1) 
 
-        self.semiHardModeBut = tk.Button(target, text="Remote", width=10,bd=2, cursor="exchange", command = lambda: self.remoteMode())
-        self.semiHardModeBut.grid(row=1, column=2, columnspan=1)
+        if self.isOnboard:
+            self.remoteControlBut = tk.Button(target, text="Remote", width=10,bd=2, cursor="exchange", command = lambda: self.remoteMode())
+            self.remoteControlBut.grid(row=1, column=2, columnspan=1)
         
         #Display Local Pos
         droneLocPos = tk.LabelFrame(self.root, text="Current Position:",width=200)
@@ -717,9 +731,9 @@ class drone_control_node(object):
 
         # Gripper Movement by Servo Value
         if self.hasGripper:
-            GripperMovement = tk.LabelFrame(self.root, text="Gripper Movement(By Servo Angle)",width=200)
-            GripperMovement.grid(row=10, column=0, columnspan=10,rowspan=1,sticky="W")
-            self.servoAngleScale=tk.Scale( GripperMovement, variable = self.servoAngle, from_ = 0, to = 180, orient = tk.HORIZONTAL, width=10,length=200) 
+            self.gripperMovement = tk.LabelFrame(self.root, text="Gripper Movement(By Servo Angle)",width=200)
+            self.gripperMovement.grid(row=10, column=0, columnspan=10,rowspan=1,sticky="W")
+            self.servoAngleScale=tk.Scale( self.gripperMovement, variable = self.servoAngle, from_ = 0, to = 180, orient = tk.HORIZONTAL, width=10,length=200) 
             self.servoAngleScale.grid(row=0,column=0, columnspan=3)
 
         
@@ -729,6 +743,8 @@ class drone_control_node(object):
         if (self.isOnboard):
             self.remote_info_update()
             self.control_node_body()
+        else:
+            self.control_node_body_offboard()
         self.GUIinfoUpdate()
         self.root.mainloop()
 
@@ -796,8 +812,16 @@ class drone_control_node(object):
                 self.px4PosBut.config(bg="grey")
                 self.px4LandBut.config(bg="grey")
                 self.px4RTLBut.config(bg="grey")
-
-            if self.hasGripper:
+            
+            # Remote Status
+            if self.isOnboard:
+                if self.allowRemote:
+                    self.remoteControlBut.config(bg="green")
+                else:
+                    self.remoteControlBut.config(bg="red")
+            
+            # update Servo Gripper
+            if self.hasGripper and self.isOnboard:
                 servo= AllServoAngle()
                 servo.header.stamp=rospy.Time.now()
                 servo.header.frame_id = self.base_link
@@ -942,95 +966,63 @@ class drone_control_node(object):
             self.mode = "manual"
         self.root.after(2,self.control_node_body)
 
-def control_node_body_offboard(self):
-        finalPoseStamped = PoseStamped()
-        targetPoseStamped = PoseStamped()
-        targetState = SetDroneState
+    def control_node_body_offboard(self):
+        targetState = SetDroneState()
         if self.mode == "manual":
             #rospy.loginfo("Drone Control Node: Manual Mode Running")
             #To MAVROS
             if(self.dronePosSafe):#droneTargetPosSafe =T => have user input in Manual mode
-                SetDroneState
+                targetState.header.stamp = rospy.Time.now()
+                targetState.header.frame_id = self.base_link
+                targetState.useCurrentPx4Mode=True
+                targetState.useCurrentMode=False
+                targetState.controlMode="manual"
+                targetState.useLocalPos=False
+                targetState.setTargetPos.position.x = self.droneTargetPosX
+                targetState.setTargetPos.position.y = self.droneTargetPosY
+                targetState.setTargetPos.position.z = self.droneTargetPosZ
+                targetState.setTargetPos.orientation.x = self.droneTargetQuatX
+                targetState.setTargetPos.orientation.y = self.droneTargetQuatY
+                targetState.setTargetPos.orientation.z = self.droneTargetQuatZ
+                targetState.setTargetPos.orientation.w = self.droneTargetQuatW
+                targetState.servoAngle = float(self.servoAngle.get())
             else:
                 #Output local pos
-                finalPoseStamped.header.stamp = rospy.Time.now()
-                finalPoseStamped.header.frame_id = self.base_link
-                finalPoseStamped.pose.position.x = self.droneSafeLocalPosX
-                finalPoseStamped.pose.position.y = self.droneSafeLocalPosY
-                finalPoseStamped.pose.position.z = self.droneSafeLocalPosZ
-                finalPoseStamped.pose.orientation.x = self.droneSafeLocalQuatX
-                finalPoseStamped.pose.orientation.y = self.droneSafeLocalQuatY
-                finalPoseStamped.pose.orientation.z = self.droneSafeLocalQuatZ
-                finalPoseStamped.pose.orientation.w = self.droneSafeLocalQuatW
-            self.dron_position_pub.publish(finalPoseStamped)
-            self.dron_nagvation_pose_pub.publish(finalPoseStamped)
-            #Current Status
-            self.dron_control_mode_pub.publish("manual")
-            status = BoolStamped()
-            status.header.stamp = rospy.Time.now()
-            status.data=False
-            self.automode_pub.publish(status)
-            #rospy.loginfo("Node:" + finalPoseStamped)
+                targetState.header.stamp = rospy.Time.now()
+                targetState.header.frame_id = self.base_link
+                targetState.useCurrentPx4Mode=True
+                targetState.useCurrentMode=False
+                targetState.controlMode="manual"
+                targetState.useLocalPos=True
+                targetState.servoAngle = float(self.servoAngle.get())
+            self.current_control_status_pub.publish(targetState)
             
         elif self.mode == "auto":
-            #rospy.loginfo("Drone Control Node: Auto Mode Running")
-            #To MAVROS
-            if (self.droneNavPosSafe):#droneNavPosSafe =T => have Navgoation input 
-                finalPoseStamped.header.stamp = self.droneNavtime
-                finalPoseStamped.header.frame_id = self.base_link
-                finalPoseStamped.pose.position.x = self.droneNavPosX
-                finalPoseStamped.pose.position.y = self.droneNavPosY
-                finalPoseStamped.pose.position.z = self.droneNavPosZ
-                finalPoseStamped.pose.orientation.x = self.droneNavQuatX
-                finalPoseStamped.pose.orientation.y = self.droneNavQuatY
-                finalPoseStamped.pose.orientation.z = self.droneNavQuatZ
-                finalPoseStamped.pose.orientation.w = self.droneNavQuatW
+            if(self.dronePosSafe):#droneTargetPosSafe =T => have user input in Manual mode
+                targetState.header.stamp = rospy.Time.now()
+                targetState.header.frame_id = self.base_link
+                targetState.useCurrentPx4Mode=True
+                targetState.useCurrentMode=False
+                targetState.controlMode="auto"
+                targetState.useLocalPos=False
+                targetState.setTargetPos.position.x = self.droneTargetPosX
+                targetState.setTargetPos.position.y = self.droneTargetPosY
+                targetState.setTargetPos.position.z = self.droneTargetPosZ
+                targetState.setTargetPos.orientation.x = self.droneTargetQuatX
+                targetState.setTargetPos.orientation.y = self.droneTargetQuatY
+                targetState.setTargetPos.orientation.z = self.droneTargetQuatZ
+                targetState.setTargetPos.orientation.w = self.droneTargetQuatW
+                targetState.servoAngle = float(self.servoAngle.get())
             else:
                 #Output local pos
-                finalPoseStamped.header.stamp = rospy.Time.now()
-                finalPoseStamped.header.frame_id = self.base_link
-                finalPoseStamped.pose.position.x = self.droneSafeLocalPosX
-                finalPoseStamped.pose.position.y = self.droneSafeLocalPosY
-                finalPoseStamped.pose.position.z = self.droneSafeLocalPosZ
-                finalPoseStamped.pose.orientation.x = self.droneSafeLocalQuatX
-                finalPoseStamped.pose.orientation.y = self.droneSafeLocalQuatY
-                finalPoseStamped.pose.orientation.z = self.droneSafeLocalQuatZ
-                finalPoseStamped.pose.orientation.w = self.droneSafeLocalQuatW
-            self.dron_position_pub.publish(finalPoseStamped)
-            
-            # For nagvation use
-            if (self.droneTargetPosSafe):#droneNavPosSafe =T => have user input in auto mode
-                targetPoseStamped.header.stamp = rospy.Time.now()
-                targetPoseStamped.header.frame_id = self.base_link
-                targetPoseStamped.pose.position.x = self.droneTargetPosX
-                targetPoseStamped.pose.position.y = self.droneTargetPosY
-                targetPoseStamped.pose.position.z = self.droneTargetPosZ
-                targetPoseStamped.pose.orientation.x = self.droneTargetQuatX
-                targetPoseStamped.pose.orientation.y = self.droneTargetQuatY
-                targetPoseStamped.pose.orientation.z = self.droneTargetQuatZ
-                targetPoseStamped.pose.orientation.w = self.droneTargetQuatW
-                self.dron_nagvation_pose_pub.publish(targetPoseStamped)
-            else:
-                rospy.loginfo("Drone Control Node: Wiating Hei Input...")
-                #Output local pos
-                #targetPoseStamped.header.stamp = rospy.Time.now()
-                #targetPoseStamped.header.frame_id = self.base_link
-                #targetPoseStamped.pose.position.x = self.droneLocalPosX
-                #targetPoseStamped.pose.position.y = self.droneLocalPosY
-                #targetPoseStamped.pose.position.z = self.droneLocalPosZ
-                #targetPoseStamped.pose.orientation.x = self.droneLocalQuatX
-                #targetPoseStamped.pose.orientation.y = self.droneLocalQuatY
-                #targetPoseStamped.pose.orientation.z = self.droneLocalQuatZ
-                #targetPoseStamped.pose.orientation.w = self.droneLocalQuatW
-            #self.dron_nagvation_pose_pub.publish(targetPoseStamped)
-
-            #Current Status
-            self.dron_control_mode_pub.publish("auto")
-            status = BoolStamped()
-            status.header.stamp = rospy.Time.now()
-            status.data=True
-            self.automode_pub.publish(status)
-            #rospy.loginfo(finalPoseStamped)
+                targetState.header.stamp = rospy.Time.now()
+                targetState.header.frame_id = self.base_link
+                targetState.useCurrentPx4Mode=True
+                targetState.useCurrentMode=False
+                targetState.controlMode="auto"
+                targetState.useLocalPos=True
+                targetState.servoAngle = float(self.servoAngle.get())
+            self.current_control_status_pub.publish(targetState)
             
         else:
             self.mode = "manual"

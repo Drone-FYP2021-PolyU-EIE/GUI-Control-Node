@@ -9,6 +9,8 @@ bool useCurrentMode
 string controlMode
 bool useLocalPos
 geometry_msgs/Pose setTargetPos
+float32 servoAngle
+
 
 # for px4mode  refer to system_status values
 # see https://mavlink.io/en/messages/common.html#MAV_STATE

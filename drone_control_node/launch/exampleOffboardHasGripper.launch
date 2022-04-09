@@ -1,0 +1,8 @@
+<launch>
+    <!--onboard example-->
+    <include file="$(find drone_control_node)/launch/lauchDroneControlNode.launch" ns="Offboard">
+		<arg name="onboard" value="false"/>
+		<arg name="image" value="false"/>
+		<arg name="hasGripper" value="true"/>
+	</include>
+</launch> 
