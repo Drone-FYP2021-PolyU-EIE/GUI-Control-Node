@@ -79,6 +79,8 @@ export ROS_HOSTNAME=$ip
 export ROS_IP=$ip
 ```
 #### On ROS Slave
+add the following into the `.bashrc`   
+replace `192.168.1.2` with your rosmaster ip    
 ```bash
 master_ip=$(192.168.1.2)
 ip=$(hostname -I | cut -f1 -d' ')
