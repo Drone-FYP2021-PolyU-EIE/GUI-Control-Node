@@ -68,6 +68,26 @@ sys.path.remove(python2_path)
 sys.path.append(python2_path)                   
 ### other opt [read](https://stackoverflow.com/questions/31414041/how-to-prepend-a-path-to-sys-path-in-python?answertab=votes)                  
 
+### Setup ROS for Offboard Control
+#### On ROS Master
+add the following into the `.bashrc`                        
+```bash
+ip=$(hostname -I | cut -f1 -d' ')
+echo 'ROS Master IP:'$ip
+export ROS_MASTER='http://'$ip':11311'
+export ROS_HOSTNAME=$ip
+export ROS_IP=$ip
+```
+#### On ROS Slave
+```bash
+master_ip=$(192.168.1.2)
+ip=$(hostname -I | cut -f1 -d' ')
+echo 'ROS Master IP:'$master_ip
+echo 'ROS Local IP:'$ip
+export ROS_MASTER='http://'$master_ip':11311'
+export ROS_HOSTNAME=$ip
+export ROS_IP=$master_ip
+```
 
 ## Procedure of using control node gui
 1. Click arm button to arm the drone
