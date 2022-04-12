@@ -74,7 +74,7 @@ add the following into the `.bashrc`
 ```bash
 ip=$(hostname -I | cut -f1 -d' ')
 echo 'ROS Master IP:'$ip
-export ROS_MASTER='http://'$ip':11311'
+export ROS_MASTER_URI='http://'$ip':11311'
 export ROS_HOSTNAME=$ip
 export ROS_IP=$ip
 ```
@@ -86,7 +86,7 @@ master_ip=$(192.168.1.2)
 ip=$(hostname -I | cut -f1 -d' ')
 echo 'ROS Master IP:'$master_ip
 echo 'ROS Local IP:'$ip
-export ROS_MASTER='http://'$master_ip':11311'
+export ROS_MASTER_URI='http://'$master_ip':11311'
 export ROS_HOSTNAME=$ip
 export ROS_IP=$master_ip
 ```
