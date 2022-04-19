@@ -95,7 +95,7 @@ export ROS_IP=$master_ip
 ```bash
 roslaunch drone_control_node exampleOnboardHasGripper.launch
 ```
-### Offboard(on the drone)
+### Offboard(Ground Station)
 ```bash
 roslaunch drone_control_node exampleOffboardHasGripper.launch
 ```
