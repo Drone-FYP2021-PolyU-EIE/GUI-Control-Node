@@ -1,5 +1,5 @@
 # dron_control_node
-this is a GUI for youe to control the px4 system drone
+this is a GUI for youe to control the px4 system drone on ROS
 ## Node ROS Topics
 ### Input of the Node
 `/mavros/local_position/pose`, `PoseStamped` get the currnte postion of the drone               
@@ -89,6 +89,15 @@ echo 'ROS Local IP:'$ip
 export ROS_MASTER_URI='http://'$master_ip':11311'
 export ROS_HOSTNAME=$ip
 export ROS_IP=$master_ip
+```
+## Run the ROS node
+### Onboard(on the drone)
+```bash
+roslaunch drone_control_node exampleOnboardHasGripper.launch
+```
+### Offboard(on the drone)
+```bash
+roslaunch drone_control_node exampleOffboardHasGripper.launch
 ```
 
 ## Procedure of using control node gui
