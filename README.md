@@ -118,3 +118,6 @@ roslaunch drone_control_node exampleOffboardHasGripper.launch
 ![image](https://user-images.githubusercontent.com/45313904/160272915-c6def331-d825-4f6c-af4b-eeddae91650c.png)
 ![image](https://user-images.githubusercontent.com/45313904/161622382-4498c14f-d986-4040-a0fc-77b88f0c1557.png)
 
+## Demo Video
+https://youtu.be/6EUKs0d83WY
+![image](https://user-images.githubusercontent.com/45313904/164148562-26323d6c-7d7a-4c17-b76c-3a00af24523f.png)
