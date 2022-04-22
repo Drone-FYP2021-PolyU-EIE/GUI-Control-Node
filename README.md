@@ -82,7 +82,7 @@ export ROS_IP=$ip
 add the following into the `.bashrc`   
 replace `192.168.1.2` with your rosmaster ip    
 ```bash
-master_ip=$(192.168.1.2)
+master_ip=$('192.168.1.2')
 ip=$(hostname -I | cut -f1 -d' ')
 echo 'ROS Master IP:'$master_ip
 echo 'ROS Local IP:'$ip
