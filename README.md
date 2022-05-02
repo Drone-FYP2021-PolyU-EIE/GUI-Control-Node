@@ -1,6 +1,23 @@
 # dron_control_node
 this is a GUI for youe to control the px4 system drone on ROS
 ## Node ROS Topics
+### Onboard dron_control_node
+|Type|Topic|Data_type|
+|:---:|:---:|:---:|
+|Publisher| /drone/nagvation/pos| [PoseStamped](http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseStamped.html)|
+|Publisher| /auto_mode/status| [BoolStamped](http://docs.ros.org/en/indigo/api/jsk_recognition_msgs/html/msg/BoolStamped.html)|
+|Publisher| /mavros/setpoint_position/local| [PoseStamped](http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseStamped.html)|
+|Publisher| /drone/current/control_status| Custom Message [GetDroneState](https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node/tree/master/drone_control_msgs)|
+|Publisher| /servo/angle| [AllServoAngle](https://github.com/Drone-FYP2021-PolyU-EIE/ROS_CircuitPython_ServoKit)|
+|Subscriber| /drone/input_posistion/pose| [PoseStamped](http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseStamped.html)|
+|Subscriber| /mavros/local_position/pose| [PoseStamped](http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseStamped.html)|
+|Subscriber| /mavros/state| [State](http://docs.ros.org/en/melodic/api/mavros_msgs/html/msg/State.html)|
+|Subscriber| /drone/set/control_status| Custom Message [SetDroneState](https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node/tree/master/drone_control_msgs)|
+### Offboard offboard/dron_control_node
+|Type|Topic|Data_type|
+|:---:|:---:|:---:|
+|Subscriber| /drone/current/control_status| Custom Message [GetDroneState](https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node/tree/master/drone_control_msgs)|
+|Publisher| /drone/set/control_status| Custom Message [SetDroneState](https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node/tree/master/drone_control_msgs)|
 ### Input of the Node
 `/mavros/local_position/pose`, `PoseStamped` get the currnte postion of the drone               
 `/drone/input_postion/pose`, `PoseStamped` get the pos from the vision nagvation system                         
