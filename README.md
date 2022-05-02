@@ -25,7 +25,6 @@ pip3 install netifaces Pillow imutils
 sudo apt-get install -y ros-$ROS_DISTRO-jsk-pcl-ros ros-$ROS_DISTRO-jsk-rviz-plugins ros-$ROS_DISTRO-ros-numpy
 $cd <catkin_ws>/src #cd to your catkin workspace src here
 git clone https://github.com/Drone-FYP2021-PolyU-EIE/dron_control_node.git
-roslaunch dron_control_node lauchDroneControlNode.launch 
 ```
 ## Setup Workspace(catkin make)
 ```bash
