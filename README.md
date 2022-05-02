@@ -3,12 +3,9 @@ this is a GUI for youe to control the px4 system drone on ROS
 ## Node ROS Topics
 ### Input of the Node
 `/mavros/local_position/pose`, `PoseStamped` get the currnte postion of the drone               
-`/drone/input_postion/pose`, `PoseStamped` get the pos from the vision nagvation system         
-`/drone/ground_control/pose`, `PoseStamped` (porposted) get the pos from the Ground Control manual input(for Ground Control use)                
+`/drone/input_postion/pose`, `PoseStamped` get the pos from the vision nagvation system                         
 `/detection_result/image`, `Image` (porposted) get the detection result and show in the GUI
-
-`/drone/set/control_mode`, `String` (porposted) set the control mode(for Ground Control use)                  
-`/drone/set/px4_mode`, `String` (porposted) set the control mode(for Ground Control use)                      
+                    
 ### Output of the Node  
 `/mavros/setpoint_position/local`, `PoseStamped` (>30Hz) pos pass to the mavros to excite       
 `/auto_mode/status`, `BoolStamped` let the navgation program know whether start the program or stop it                       
